@@ -10,7 +10,7 @@
     Vroom, V. H., & Yetton, P. W. (1973). Leadership and decision-making.
       Pittsburgh, PA: University of Pittsburgh Press.
   
-  本系統實作 12 項問題屬性診斷,計算五種決策過程的整體效能 (O_Eff),
+  本系統實作多項問題屬性診斷,計算五種決策過程的整體效能 (O_Eff),
   並依據規範模型推薦最適決策方式。
   
   單檔 HTML/CSS/JS,離線可用,不依賴任何外部資源。
@@ -1228,7 +1228,7 @@ const ATTRIBUTES = [
     question: '這個決策的「技術品質」有多重要?',
     questionEn: 'How important is the technical quality of this decision?',
     altQuestion: '假設大家都願意配合,那麼「選哪個方案」本身重要嗎?',
-    detail: '這題在問:<strong>「撇開人的因素不談，這件事在專業、技術或邏輯上，是否存在一個客觀判斷上比較好的決定?</strong><br><br>有些事情其實沒有絕對的對錯。例如員工餐廳要漆什麼顏色——只要大家可以接受,你選藍色或綠色都不會差太多。這種情況下,根本沒有所謂的「品質要求」,本題就回答「<strong>不重要</strong>」。<br><br>但<strong>多數管理決策不是這樣</strong>。要選什麼產品上市、要進入哪個市場、行銷要怎麼做——在這些決定上,<strong>不同方案會明顯帶來客觀上不同的後果</strong>。你可能還不確定哪個方案最好,但你心裡很清楚:「<strong>選對選錯在客觀判斷標準上會造成重大的差異（如營收、市佔率）</strong>」。這時就有品質要求了。<br><br><strong>判斷重要性的訣竅:</strong>想像同一個問題,做出「明智」的決定和「糟糕」的決定,對組織的價值差多少?差不多 → 1 分(不重要);差很多,而且攸關存亡 → 5 分(極為關鍵)。'
+    detail: '這題在問:<strong>「撇開人的因素不談，這件事在專業、技術或邏輯上，是否存在一個客觀判斷上比較好的決定?</strong><br><br>有些事情其實沒有絕對的對錯。例如員工餐廳要漆什麼顏色——只要大家可以接受,你選藍色或綠色都不會差太多。這種情況下,根本沒有所謂的「品質要求」,本題就回答「<strong>不重要</strong>」。<br><br>但<strong>多數管理決策不是這樣</strong>。要選什麼產品上市、要進入哪個市場、行銷要怎麼做——在這些決定上,<strong>不同方案會明顯帶來客觀上不同的後果</strong>。你可能還不確定哪個方案最好,但你心裡很清楚:「<strong>選對選錯在客觀判斷標準上會造成重大的差異（如營收、市佔率）</strong>」。這時就有品質要求了。<br><br><strong>判斷重要性的訣竅:</strong>想像同一個問題,做出「明智」的決定和「糟糕」的決定,對組織的價值差多少?差不多 → 1 分(不重要);差很多,而且攸關存亡 → 5 分(極為重要)。'
   },
   {
     code: 'CR', name: '承諾要求', nameEn: 'Commitment Requirement',
@@ -1323,7 +1323,7 @@ const ATTRIBUTES = [
 /** 量表標籤 — 採用通順口語化版本 */
 const SCALE_LABELS = {
   importance: ['No Import', 'Low Import', 'Average', 'High Import', 'Critical'],
-  importanceTw: ['不重要', '不太重要', '普通', '重要', '極為關鍵'],
+  importanceTw: ['不重要', '不太重要', '普通', '重要', '極為重要'],
   probability: ['No', 'Probably No', 'Maybe', 'Probably Yes', 'Yes'],
   probabilityTw: ['不會', '大概不會', '也許會', '大概會', '一定會'],
   sufficiency: ['No', 'Probably No', 'Maybe', 'Probably Yes', 'Yes'],
@@ -1662,7 +1662,7 @@ function renderWelcome() {
         Extended by <strong>Vroom &amp; Jago (1988)</strong> · <em>The New Leadership</em>
       </div>
       <p class="welcome-intro">
-        本系統依循 Vroom-Jago 規範模型,透過診斷 <strong>12 項問題屬性</strong>,
+        本系統依循 Vroom-Jago 規範模型,透過診斷 <strong>12 項問題屬性（個人問題為11項）</strong>,
         以模型方程式計算五種決策過程的 <strong>整體效能（Overall Effectiveness）</strong>,
         並推薦在當前情境下最適合您的決策方式。系統適用於組織理論教學、領導力培訓、
         以及實務管理者於關鍵決策前的自我診斷。
@@ -1759,7 +1759,7 @@ function renderScenario() {
       <textarea class="scenario-input" id="scenario-input" placeholder=""></textarea>
       <div class="scenario-hint">— 此資訊僅在您本機處理,不會傳送至任何伺服器 —</div>
       <div class="btn-row">
-        <button class="btn btn-primary" id="next-btn">進入屬性診斷 →</button>
+        <button class="btn btn-primary" id="next-btn">進入問題診斷 →</button>
         <button class="btn btn-text" id="back-btn">← 返回上一步</button>
       </div>
     </div>
