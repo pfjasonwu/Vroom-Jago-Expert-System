@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<!--
+============================================================================
+  Vroom-Jago 決策模式專家系統 (Vroom-Jago Decision-Making Expert System)
+============================================================================
+  模型來源:
+    Vroom, V. H., & Jago, A. G. (1988). The new leadership: Managing
+      participation in organizations. Englewood Cliffs, NJ: Prentice-Hall.
+  原始模型:
+    Vroom, V. H., & Yetton, P. W. (1973). Leadership and decision-making.
+      Pittsburgh, PA: University of Pittsburgh Press.
+  
+  本系統實作 12 項問題屬性診斷,計算五種決策過程的整體效能 (O_Eff),
+  並依據規範模型推薦最適決策方式。
+  
+  單檔 HTML/CSS/JS,離線可用,不依賴任何外部資源。
+============================================================================
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vroom-Jago 決策模式專家系統</title>
+<style>
+/* ============================================================
+   設計系統 — 學術期刊風格
+   主色:深藍 #1e3a5f / 米白 #f8f5f0 / 強調金 #c9a961
+   ============================================================ */
+:root {
+  --navy:       #1e3a5f;
+  --navy-deep:  #14283f;
+  --navy-soft:  #2d5078;
+  --cream:      #f8f5f0;
+  --cream-warm: #f1ece2;
+  --gold:       #c9a961;
+  --gold-deep:  #a88a44;
+  --ink:        #1a1a1a;
+  --ink-soft:   #4a4a4a;
+  --ink-mute:   #7a7a7a;
+  --line:       #d8d2c4;
+  --line-soft:  #e8e2d4;
+  --paper:      #fdfbf7;
+  --shadow-sm:  0 1px 2px rgba(20,40,63,.06), 0 2px 8px rgba(20,40,63,.04);
+  --shadow-md:  0 4px 12px rgba(20,40,63,.08), 0 12px 32px rgba(20,40,63,.06);
+  --shadow-lg:  0 12px 32px rgba(20,40,63,.12), 0 32px 64px rgba(20,40,63,.08);
+  --serif:      "Source Serif Pro", "Noto Serif TC", "Songti TC", "STSong",
+                "PingFang TC", Georgia, "Times New Roman", serif;
+  --sans:       -apple-system, BlinkMacSystemFont, "PingFang TC",
+                "Microsoft JhengHei", "Heiti TC", "Helvetica Neue",
+                Arial, sans-serif;
+  --mono:       "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--cream);
+  color: var(--ink);
+  line-height: 1.65;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+  min-height: 100vh;
+  /* 紙質紋理 */
+  background-image:
+    radial-gradient(circle at 25% 15%, rgba(201,169,97,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 75% 85%, rgba(30,58,95,0.03) 0%, transparent 55%);
+}
+
+/* 學術頁眉 */
+.app-header {
+  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+  color: var(--cream);
+  padding: 18px 0;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 3px solid var(--gold);
+  box-shadow: var(--shadow-md);
+}
+.app-header-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+}
+.header-brand { display: flex; align-items: center; gap: 14px; }
+.header-mark {
+  width: 38px; height: 38px;
+  border: 1.5px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-style: italic;
+  font-size: 20px; font-weight: 600; color: var(--gold);
+  letter-spacing: 0;
+}
+.header-title { font-family: var(--serif); font-size: 18px; font-weight: 600; letter-spacing: 0.02em; }
+.header-sub   { font-size: 11px; color: rgba(248,245,240,0.65); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+.header-step  {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold); letter-spacing: 0.18em; text-transform: uppercase;
+  border-left: 1px solid rgba(201,169,97,0.4);
+  padding-left: 16px;
+}
+
+/* 主容器 */
+main { max-width: 980px; margin: 0 auto; padding: 56px 28px 96px; }
+
+/* ============================================================
+   STEP 0 — 歡迎頁
+   ============================================================ */
+.welcome { animation: fadeUp 0.6s ease-out; }
+.welcome-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold-deep); letter-spacing: 0.3em; text-transform: uppercase;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.welcome-eyebrow::before, .welcome-eyebrow::after {
+  content: ''; height: 1px; background: var(--gold-deep); flex: 0 0 32px;
+}
+.welcome-eyebrow::after { flex: 1; opacity: 0.4; }
+.welcome-title {
+  font-family: var(--serif);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 700;
+  color: var(--navy-deep);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+.welcome-title em {
+  font-style: italic;
+  color: var(--gold-deep);
+  font-weight: 500;
+}
+.welcome-title-en {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(18px, 2.2vw, 24px);
+  color: var(--ink-soft);
+  font-weight: 400;
+  margin-bottom: 32px;
+  letter-spacing: 0.01em;
+}
+.welcome-cite {
+  font-family: var(--serif);
+  font-size: 14px; color: var(--ink-mute);
+  font-style: italic;
+  border-left: 2px solid var(--gold);
+  padding: 6px 16px;
+  margin-bottom: 36px;
+  line-height: 1.55;
+}
+.welcome-intro {
+  font-size: 17px; line-height: 1.85;
+  color: var(--ink-soft);
+  max-width: 720px;
+  margin-bottom: 48px;
+}
+.welcome-intro strong { color: var(--navy); font-weight: 600; }
+
+.problem-choose-label {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink-mute); letter-spacing: 0.25em; text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.problem-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 56px;
+}
+.problem-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 32px 28px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+.problem-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0;
+  width: 4px; height: 100%;
+  background: var(--gold);
+  transform: scaleY(0); transform-origin: top;
+  transition: transform 0.4s ease;
+}
+.problem-card:hover::before { transform: scaleY(1); }
+.problem-card:hover {
+  border-color: var(--navy);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.problem-card-num {
+  font-family: var(--serif); font-style: italic;
+  font-size: 13px; color: var(--gold-deep);
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.problem-card-title {
+  font-family: var(--serif);
+  font-size: 24px; font-weight: 600;
+  color: var(--navy-deep);
+  margin-bottom: 4px;
+}
+.problem-card-en {
+  font-family: var(--serif); font-style: italic;
+  font-size: 14px; color: var(--ink-mute);
+  margin-bottom: 14px;
+}
+.problem-card-desc {
+  font-size: 14px; color: var(--ink-soft);
+  line-height: 1.7;
+}
+.problem-card-arrow {
+  margin-top: 16px;
+  font-family: var(--serif); font-size: 13px;
+  color: var(--gold-deep); font-style: italic;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* 摺疊區塊 */
+details.disclosure {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+details.disclosure[open] {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-sm);
+}
+details.disclosure summary {
+  padding: 18px 24px;
+  cursor: pointer;
+  font-family: var(--serif);
+  font-size: 16px; font-weight: 600;
+  color: var(--navy);
+  list-style: none;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: background 0.2s ease;
+}
+details.disclosure summary::-webkit-details-marker { display: none; }
+details.disclosure summary:hover { background: var(--cream-warm); }
+details.disclosure summary::after {
+  content: '+';
+  font-family: var(--serif); font-size: 22px;
+  color: var(--gold-deep); transition: transform 0.3s ease;
+  font-weight: 300;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+}
+details.disclosure[open] summary::after { transform: rotate(45deg); }
+details.disclosure .disclosure-body {
+  padding: 4px 24px 24px;
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+/* 五種過程定義表 */
+.process-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+  font-size: 14px;
+}
+.process-table th, .process-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: top;
+}
+.process-table th {
+  background: var(--cream-warm);
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--navy-deep);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+}
+.process-table td.proc-code {
+  font-family: var(--mono); font-weight: 700;
+  color: var(--gold-deep);
+  width: 60px;
+}
+.process-table td.proc-name {
+  font-weight: 600; color: var(--navy);
+  width: 130px;
+}
+
+/* ============================================================
+   STEP 1 — 情境輸入頁
+   ============================================================ */
+.section-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold-deep); letter-spacing: 0.3em; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--serif);
+  font-size: 36px; font-weight: 700;
+  color: var(--navy-deep);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.section-title-en {
+  font-family: var(--serif); font-style: italic;
+  font-size: 17px; color: var(--ink-mute);
+  margin-bottom: 32px;
+}
+.section-intro {
+  font-size: 16px; color: var(--ink-soft);
+  line-height: 1.85;
+  max-width: 720px;
+  margin-bottom: 36px;
+}
+.scenario-input {
+  width: 100%;
+  min-height: 140px;
+  padding: 18px 20px;
+  font-family: inherit; font-size: 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+  line-height: 1.7;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.scenario-input:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(30,58,95,0.08);
+}
+.scenario-hint {
+  font-size: 13px; color: var(--ink-mute);
+  font-style: italic;
+  margin-top: 10px;
+}
+
+/* 通用按鈕 */
+.btn-row {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-top: 36px; align-items: center;
+}
+.btn {
+  font-family: var(--sans); font-size: 14.5px;
+  font-weight: 500;
+  padding: 14px 28px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: 0.04em;
+  border-radius: 2px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary {
+  background: var(--navy);
+  color: var(--cream);
+  border: 1px solid var(--navy);
+}
+.btn-primary:hover { background: var(--navy-deep); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-gold {
+  background: var(--gold);
+  color: var(--navy-deep);
+  border: 1px solid var(--gold-deep);
+  font-weight: 600;
+}
+.btn-gold:hover { background: var(--gold-deep); color: var(--cream); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-ghost {
+  background: transparent;
+  color: var(--navy);
+  border: 1px solid var(--line);
+}
+.btn-ghost:hover { background: var(--cream-warm); border-color: var(--navy); }
+.btn-text {
+  background: transparent; color: var(--ink-soft);
+  border: none; padding: 12px 16px;
+  text-decoration: underline; text-underline-offset: 4px;
+  text-decoration-color: var(--line);
+}
+.btn-text:hover { color: var(--navy); text-decoration-color: var(--gold); }
+
+/* ============================================================
+   STEP 2 — 12 題診斷頁
+   ============================================================ */
+.progress-bar {
+  position: sticky; top: 78px;
+  background: var(--cream);
+  padding: 16px 0 14px;
+  margin: -16px -28px 28px;
+  padding-left: 28px; padding-right: 28px;
+  border-bottom: 1px solid var(--line-soft);
+  z-index: 50;
+  display: flex; align-items: center; gap: 16px;
+}
+.progress-track {
+  flex: 1; height: 3px;
+  background: var(--line-soft);
+  position: relative;
+  overflow: hidden;
+}
+.progress-fill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.progress-text {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--navy);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.question-block {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 32px 36px;
+  margin-bottom: 20px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+.question-block:hover { box-shadow: var(--shadow-sm); }
+.question-block.answered {
+  border-left: 3px solid var(--gold);
+}
+.question-header {
+  display: flex; align-items: baseline; gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.question-num {
+  font-family: var(--serif);
+  font-size: 14px; font-style: italic;
+  color: var(--gold-deep);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+.question-code {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--navy);
+  color: var(--cream);
+  padding: 3px 9px;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+}
+.question-name {
+  font-family: var(--serif);
+  font-size: 22px; font-weight: 600;
+  color: var(--navy-deep);
+  letter-spacing: -0.005em;
+}
+.question-name-en {
+  font-family: var(--serif); font-style: italic;
+  font-size: 14px; color: var(--ink-mute);
+  margin-left: auto;
+}
+.question-text {
+  font-size: 16px;
+  color: var(--ink);
+  line-height: 1.75;
+  margin-bottom: 6px;
+}
+.question-text-en {
+  font-family: var(--serif); font-style: italic;
+  font-size: 14.5px;
+  color: var(--ink-mute);
+  line-height: 1.7;
+  margin-bottom: 24px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+}
+
+/* 1-5 量表 — 圓圈式 */
+.scale-row {
+  display: flex; align-items: center; gap: 8px;
+  margin: 20px 0 12px;
+  flex-wrap: wrap;
+}
+.scale-circles {
+  display: flex; gap: 10px;
+  flex: 1; min-width: 280px;
+  justify-content: space-between;
+  max-width: 460px;
+}
+.scale-circle {
+  width: 48px; height: 48px;
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--serif);
+  font-size: 18px; font-weight: 600;
+  color: var(--ink-mute);
+  display: flex; align-items: center; justify-content: center;
+}
+.scale-circle:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+  transform: scale(1.08);
+}
+.scale-circle.selected {
+  background: var(--navy);
+  border-color: var(--navy-deep);
+  color: var(--cream);
+  box-shadow: 0 0 0 4px rgba(30,58,95,0.12);
+  transform: scale(1.05);
+}
+.scale-circle.selected.gold-mode {
+  background: var(--gold);
+  border-color: var(--gold-deep);
+  color: var(--navy-deep);
+  box-shadow: 0 0 0 4px rgba(201,169,97,0.18);
+}
+.scale-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--ink-mute);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  max-width: 460px;
+  margin-bottom: 18px;
+}
+.scale-label-mid {
+  display: flex; justify-content: space-between;
+  max-width: 460px;
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: -4px; margin-bottom: 16px;
+  padding: 0 12px;
+}
+
+/* 二元 (TC/GD) 按鈕 */
+.binary-row {
+  display: flex; gap: 12px;
+  margin: 20px 0 16px;
+}
+.binary-btn {
+  flex: 1; max-width: 220px;
+  padding: 18px 24px;
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  cursor: pointer;
+  font-family: inherit; font-size: 15px;
+  color: var(--ink);
+  transition: all 0.2s ease;
+  border-radius: 2px;
+  text-align: left;
+}
+.binary-btn .bb-yn {
+  font-family: var(--serif); font-size: 18px; font-weight: 600;
+  color: var(--navy);
+  display: block; margin-bottom: 4px;
+}
+.binary-btn .bb-en {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink-mute); letter-spacing: 0.1em;
+}
+.binary-btn:hover {
+  border-color: var(--navy); transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.binary-btn.selected {
+  background: var(--navy); border-color: var(--navy-deep);
+}
+.binary-btn.selected .bb-yn { color: var(--cream); }
+.binary-btn.selected .bb-en { color: var(--gold); }
+
+/* 替代問句 / 詳細說明 / 教學案例 */
+.q-aux {
+  margin-top: 18px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.q-aux details {
+  font-size: 14px;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 14px;
+}
+.q-aux details summary {
+  cursor: pointer;
+  color: var(--navy);
+  font-weight: 500;
+  list-style: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 0;
+  user-select: none;
+}
+.q-aux details summary::-webkit-details-marker { display: none; }
+.q-aux details summary::before {
+  content: '▸';
+  font-size: 10px; transition: transform 0.2s ease;
+  color: var(--gold-deep);
+}
+.q-aux details[open] summary::before { transform: rotate(90deg); }
+.q-aux details summary:hover { color: var(--gold-deep); }
+.q-aux .aux-body {
+  padding: 12px 16px 4px 22px;
+  font-size: 14px; color: var(--ink-soft);
+  line-height: 1.75;
+}
+.q-aux .aux-body em {
+  font-style: italic; color: var(--ink-mute);
+}
+.q-aux .case-body {
+  background: var(--cream-warm);
+  padding: 14px 18px;
+  border-left: 3px solid var(--gold);
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.75;
+  border-radius: 0 2px 2px 0;
+}
+.q-aux .case-body .case-label {
+  font-family: var(--serif); font-style: italic;
+  font-size: 13px; color: var(--gold-deep);
+  margin-bottom: 4px;
+}
+
+/* ============================================================
+   STEP 3 — 結果報告頁
+   ============================================================ */
+.report-banner {
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, var(--navy-soft) 100%);
+  color: var(--cream);
+  padding: 48px 44px;
+  margin-bottom: 32px;
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.report-banner::before {
+  content: '';
+  position: absolute; top: -50%; right: -10%;
+  width: 60%; height: 200%;
+  background: radial-gradient(ellipse at center, rgba(201,169,97,0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.report-banner-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold); letter-spacing: 0.3em; text-transform: uppercase;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 12px;
+}
+.report-banner-eyebrow::before {
+  content: ''; width: 28px; height: 1px; background: var(--gold);
+}
+.report-rec-label {
+  font-family: var(--serif); font-style: italic;
+  font-size: 18px; color: rgba(248,245,240,0.7);
+  margin-bottom: 10px;
+}
+.report-rec-name {
+  font-family: var(--serif); font-size: clamp(40px, 6vw, 64px);
+  font-weight: 700; line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.report-rec-name .rec-code {
+  font-style: italic;
+  color: var(--gold);
+  margin-right: 16px;
+}
+.report-rec-en {
+  font-family: var(--serif); font-style: italic;
+  font-size: 18px; color: rgba(248,245,240,0.65);
+  margin-bottom: 24px;
+}
+.report-rec-desc {
+  font-size: 16px; line-height: 1.8;
+  color: rgba(248,245,240,0.92);
+  max-width: 680px;
+  margin-bottom: 24px;
+}
+.report-rec-score {
+  display: flex; align-items: baseline; gap: 12px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(201,169,97,0.3);
+}
+.report-rec-score-label {
+  font-family: var(--mono); font-size: 11px;
+  color: rgba(248,245,240,0.6); letter-spacing: 0.2em; text-transform: uppercase;
+}
+.report-rec-score-val {
+  font-family: var(--serif); font-size: 42px; font-weight: 700;
+  color: var(--gold); letter-spacing: -0.02em;
+}
+.report-scenario-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  border-radius: 2px;
+  border-left: 3px solid var(--gold);
+}
+.report-scenario-label {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink-mute); letter-spacing: 0.2em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.report-scenario-text {
+  font-family: var(--serif); font-size: 17px;
+  color: var(--navy-deep);
+  line-height: 1.6;
+}
+
+/* 報告章節 */
+.report-section { margin-bottom: 44px; }
+.report-section-title {
+  font-family: var(--serif);
+  font-size: 24px; font-weight: 700;
+  color: var(--navy-deep);
+  margin-bottom: 6px;
+  display: flex; align-items: baseline; gap: 12px;
+}
+.report-section-title::before {
+  content: attr(data-num);
+  font-style: italic;
+  color: var(--gold-deep);
+  font-size: 18px;
+  font-weight: 500;
+}
+.report-section-en {
+  font-family: var(--serif); font-style: italic;
+  font-size: 14px; color: var(--ink-mute);
+  margin-bottom: 20px;
+}
+
+/* 比較表 */
+.results-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 24px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.results-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 14px;
+  min-width: 720px;
+}
+.results-table th {
+  background: var(--navy-deep);
+  color: var(--cream);
+  font-family: var(--serif);
+  font-weight: 600;
+  padding: 14px 12px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--gold);
+}
+.results-table th:first-child { text-align: left; padding-left: 20px; }
+.results-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: center;
+  font-family: var(--mono);
+  color: var(--ink-soft);
+}
+.results-table td:first-child {
+  text-align: left; padding-left: 20px;
+  font-family: var(--serif); font-weight: 600;
+  color: var(--navy);
+}
+.results-table td.col-oeff {
+  font-weight: 700; color: var(--navy-deep);
+  font-size: 16px;
+}
+.results-table tr.recommended {
+  background: linear-gradient(90deg, rgba(201,169,97,0.18) 0%, rgba(201,169,97,0.08) 100%);
+  border-left: 3px solid var(--gold);
+}
+.results-table tr.recommended td:first-child { color: var(--gold-deep); }
+.results-table tr.recommended td.col-oeff { color: var(--gold-deep); }
+.results-table tr:hover:not(.recommended) { background: var(--cream-warm); }
+.col-rank {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--ink-soft);
+}
+.results-table tr.recommended .col-rank {
+  background: var(--gold); color: var(--navy-deep); border-color: var(--gold-deep);
+  font-weight: 700;
+}
+
+/* 長條圖 */
+.chart-wrap {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+}
+.chart-title {
+  font-family: var(--serif); font-size: 14px;
+  color: var(--ink-mute); font-style: italic;
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+}
+.chart-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.chart-label {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 14px; color: var(--navy);
+}
+.chart-track {
+  position: relative;
+  height: 26px;
+  background: var(--cream-warm);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.chart-track::before {
+  content: ''; position: absolute;
+  left: 50%; top: 0; height: 100%; width: 1px;
+  background: var(--line); opacity: 0.6;
+  pointer-events: none;
+}
+.chart-bar {
+  position: absolute; top: 0; height: 100%;
+  background: linear-gradient(90deg, var(--navy-soft), var(--navy));
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; align-items: center;
+  border-radius: 2px;
+}
+.chart-bar.gold {
+  background: linear-gradient(90deg, var(--gold), var(--gold-deep));
+}
+.chart-bar.negative {
+  background: linear-gradient(90deg, #b85040, #8a3025);
+}
+.chart-value {
+  font-family: var(--mono); font-size: 13px;
+  color: var(--ink); text-align: right;
+  font-weight: 600;
+}
+
+/* 屬性回顧表 */
+.attr-review {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 24px;
+}
+.attr-cell {
+  padding: 12px 14px;
+  border-left: 2px solid var(--line);
+  background: var(--cream);
+  border-radius: 0 2px 2px 0;
+}
+.attr-cell .ac-code {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold-deep); letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+.attr-cell .ac-name {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 14px; color: var(--navy);
+  margin-bottom: 6px;
+}
+.attr-cell .ac-vals {
+  display: flex; gap: 14px;
+  font-size: 12px;
+}
+.attr-cell .ac-raw, .attr-cell .ac-scaled {
+  font-family: var(--mono);
+}
+.attr-cell .ac-raw-label, .attr-cell .ac-scaled-label {
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+.attr-cell .ac-raw-val { color: var(--navy); font-weight: 700; }
+.attr-cell .ac-scaled-val { color: var(--gold-deep); font-weight: 700; }
+
+/* 解釋段落 */
+.explanation {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 32px 36px;
+}
+.explanation-section {
+  margin-bottom: 24px;
+}
+.explanation-section:last-child { margin-bottom: 0; }
+.explanation-section h4 {
+  font-family: var(--serif);
+  font-size: 17px; font-weight: 600;
+  color: var(--navy-deep);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.explanation-section h4::before {
+  content: ''; width: 18px; height: 1px; background: var(--gold);
+}
+.explanation-section p {
+  font-size: 15px; line-height: 1.85;
+  color: var(--ink-soft);
+}
+.explanation-section p strong {
+  color: var(--navy); font-weight: 600;
+  background: rgba(201,169,97,0.15);
+  padding: 1px 6px; border-radius: 2px;
+}
+.explanation-section ul {
+  list-style: none; padding-left: 0; margin-top: 8px;
+}
+.explanation-section ul li {
+  position: relative; padding-left: 22px;
+  margin-bottom: 8px; font-size: 14.5px;
+  line-height: 1.75; color: var(--ink-soft);
+}
+.explanation-section ul li::before {
+  content: '◇';
+  position: absolute; left: 0; top: 1px;
+  color: var(--gold-deep); font-size: 12px;
+}
+
+/* ============================================================
+   浮動模型說明按鈕 + Modal
+   ============================================================ */
+.fab {
+  position: fixed; bottom: 28px; right: 28px;
+  width: 56px; height: 56px;
+  background: var(--navy-deep);
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: var(--serif);
+  font-size: 22px; font-weight: 600;
+  box-shadow: var(--shadow-md);
+  z-index: 90;
+  transition: all 0.3s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.fab:hover {
+  transform: scale(1.08); background: var(--navy);
+  box-shadow: var(--shadow-lg);
+}
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(20,40,63,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-backdrop.open { display: flex; animation: fadeIn 0.25s ease; }
+.modal {
+  background: var(--paper);
+  border-radius: 2px;
+  max-width: 880px; width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+  border-top: 4px solid var(--gold);
+  animation: slideUp 0.3s ease;
+}
+.modal-header {
+  padding: 28px 36px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.modal-title {
+  font-family: var(--serif);
+  font-size: 24px; font-weight: 700;
+  color: var(--navy-deep);
+}
+.modal-subtitle {
+  font-family: var(--serif); font-style: italic;
+  font-size: 13px; color: var(--ink-mute);
+  margin-top: 4px;
+}
+.modal-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 28px; color: var(--ink-mute);
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); line-height: 1;
+}
+.modal-close:hover { color: var(--navy); }
+.modal-body { padding: 24px 36px 36px; }
+.modal-tabs {
+  display: flex; gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.modal-tab {
+  padding: 10px 18px;
+  background: none; border: none;
+  cursor: pointer;
+  font-family: var(--serif); font-size: 14px;
+  color: var(--ink-mute);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s ease;
+}
+.modal-tab:hover { color: var(--navy); }
+.modal-tab.active {
+  color: var(--navy-deep);
+  border-bottom-color: var(--gold);
+  font-weight: 600;
+}
+.modal-pane { display: none; }
+.modal-pane.active { display: block; animation: fadeIn 0.3s ease; }
+
+/* 方程式 KaTeX 風格 */
+.eq-block {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  font-family: var(--serif);
+  font-size: 14.5px;
+  line-height: 2;
+  color: var(--navy-deep);
+  border-left: 3px solid var(--gold);
+  overflow-x: auto;
+}
+.eq-block .eq-name {
+  font-style: italic;
+  color: var(--gold-deep);
+  font-weight: 600;
+  margin-right: 10px;
+}
+.eq-block .eq-var { font-style: italic; }
+.eq-block .eq-sub {
+  font-size: 0.75em; vertical-align: sub;
+}
+.eq-section-title {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 16px; color: var(--navy);
+  margin-bottom: 12px; margin-top: 20px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--line-soft);
+}
+
+/* Rescaling 表 */
+.rescale-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.rescale-table th, .rescale-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--line-soft);
+  text-align: center;
+  font-family: var(--mono);
+}
+.rescale-table th {
+  background: var(--cream-warm);
+  font-family: var(--serif);
+  color: var(--navy);
+  font-weight: 600;
+}
+.rescale-table td:first-child {
+  text-align: left;
+  font-family: var(--serif); font-weight: 600;
+  color: var(--navy);
+}
+
+/* ============================================================
+   雜項
+   ============================================================ */
+.test-cases {
+  background: var(--cream-warm);
+  border: 1px dashed var(--gold);
+  padding: 18px 22px;
+  border-radius: 2px;
+  margin-top: 24px;
+}
+.test-cases-label {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold-deep); letter-spacing: 0.18em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.test-cases-buttons {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.test-btn {
+  font-family: var(--mono); font-size: 12px;
+  padding: 8px 14px;
+  background: var(--paper);
+  border: 1px solid var(--gold);
+  color: var(--navy-deep);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+.test-btn:hover {
+  background: var(--gold); color: var(--navy-deep);
+  transform: translateY(-1px);
+}
+
+/* 動畫 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 響應式 */
+@media (max-width: 720px) {
+  main { padding: 32px 18px 80px; }
+  .question-block { padding: 22px 20px; }
+  .scale-circle { width: 42px; height: 42px; font-size: 16px; }
+  .scale-circles { gap: 6px; min-width: 0; }
+  .report-banner { padding: 32px 24px; }
+  .modal-header, .modal-body { padding-left: 22px; padding-right: 22px; }
+  .header-sub { display: none; }
+  .header-title { font-size: 15px; }
+  .explanation { padding: 22px; }
+  .chart-row { grid-template-columns: 50px 1fr 70px; gap: 10px; }
+}
+
+/* 列印樣式 */
+@media print {
+  .app-header, .fab, .progress-bar, .btn-row, .test-cases { display: none !important; }
+  body { background: white; }
+  .question-block, .report-banner, .results-table-wrap, .chart-wrap,
+  .attr-review, .explanation, .report-scenario-card {
+    box-shadow: none; page-break-inside: avoid;
+  }
+  .report-banner { color: var(--navy-deep); background: white; border: 2px solid var(--navy); }
+  .report-banner * { color: var(--navy-deep) !important; }
+  .report-rec-score-val { color: var(--gold-deep) !important; }
+  main { padding: 0; max-width: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     頁眉
+     ============================================================ -->
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="header-brand">
+      <div>
+        <div class="header-title">Vroom-Jago 決策模式專家系統</div>
+        <div class="header-sub">Normative Decision-Making Model · 1973 / 1988</div>
+      </div>
+    </div>
+    <div class="header-step" id="header-step">— Step 0 —</div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<!-- 浮動「模型說明」按鈕 -->
+<button class="fab" id="fab" title="模型說明 / Model Reference">?</button>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Vroom-Jago 模型參考</div>
+        <div class="modal-subtitle">Reference · Definitions, Equations &amp; Rescaling</div>
+      </div>
+      <button class="modal-close" id="modal-close" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="attrs">12 項屬性</button>
+        <button class="modal-tab" data-tab="procs">五種決策過程</button>
+        <button class="modal-tab" data-tab="rescale">Rescaling</button>
+        <button class="modal-tab" data-tab="eqs">模型方程式</button>
+      </div>
+      <div class="modal-pane active" id="pane-attrs"></div>
+      <div class="modal-pane" id="pane-procs"></div>
+      <div class="modal-pane" id="pane-rescale"></div>
+      <div class="modal-pane" id="pane-eqs"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   1. 資料模組
+   ============================================================ */
+
+/**
+ * 12 項問題屬性的完整定義
+ * 內容譯自 Vroom & Jago (1988), p.181-188
+ * 每個物件包含:題號、代碼、中英名稱、量表類型、主問題、替代問句、詳細說明
+ */
+const ATTRIBUTES = [
+  {
+    code: 'QR', name: '品質要求', nameEn: 'Quality Requirement',
+    scale: 'importance',
+    question: '這個決策的「技術品質」有多重要?',
+    questionEn: 'How important is the technical quality of this decision?',
+    altQuestion: '假設大家都願意配合,那麼「選哪個方案」本身重要嗎?',
+    detail: '這題在問:<strong>有沒有所謂「比較好的決定」存在?</strong><br><br>有些事情其實沒有絕對的對錯。例如員工餐廳要漆什麼顏色——只要大家可以接受,你選藍色或綠色都不會差太多。這種情況下,根本沒有所謂的「品質要求」,本題就回答「<strong>不重要</strong>」。<br><br>但<strong>多數管理決策不是這樣</strong>。要選什麼產品上市、要進入哪個市場、廣告要怎麼打——這些決定,<strong>不同方案會帶來明顯不同的後果</strong>。你可能還不確定哪個方案最好,但你心裡很清楚:「<strong>選錯會出事,選對會大大加分</strong>」。這時就有品質要求了。<br><br><strong>判斷重要性的訣竅:</strong>想像同一個問題,做出「英明」的決定和「糟糕」的決定,對組織的價值差多少?差不多 → 1 分(不重要);差很多,而且攸關存亡 → 5 分(極為關鍵)。'
+  },
+  {
+    code: 'CR', name: '承諾要求', nameEn: 'Commitment Requirement',
+    scale: 'importance',
+    question: '部屬「真心支持」這個決策有多重要?',
+    questionEn: 'How important is subordinate commitment to the decision?',
+    altQuestion: '部屬願不願意「買單」這個決策,有多關鍵?部屬有多在意這個決定?',
+    detail: '有時候,即使方案技術上完全正確,<strong>只要執行的人心不甘情不願,還是會搞砸</strong>。這種「沒人配合就會失敗」的決策,就具有承諾要求。<br><br><strong>判斷時請看兩件事:</strong><br>(1) 執行這個決策,<strong>需要部屬主動發揮判斷力與心力嗎</strong>?還是只要照表操課就好?<br>(2) 部屬會不會<strong>對這個決定有強烈感受</strong>——可能積極支持某些方案,也可能強烈反對其他方案?嚴重時,他們會不會公開抵制、暗中阻撓,甚至辭職走人?<br><br><strong>重要區別:不要把「承諾」和「服從」搞混。</strong>如果你能明確指示部屬該做什麼,而且有制度確保他們照做,那「他們真心認同與否」就不重要——只要他們服從就好。但如果這個決策需要部屬發揮主動性、判斷力、創造力,<strong>光服從是不夠的,必須真心認同</strong>。<br><br><strong>另一個提醒:</strong>評估 CR 時,<strong>不要被 QR(品質要求)影響</strong>。「決策需要部屬支持」與「決策技術上重不重要」是兩件獨立的事,要分開判斷。'
+  },
+  {
+    code: 'LI', name: '領導者資訊充分度', nameEn: 'Leader Information',
+    scale: 'sufficiency',
+    question: '你手上的資訊,夠你獨自做出高品質決策嗎?',
+    questionEn: 'Do you have sufficient information to make a high-quality decision?',
+    altQuestion: '你具備處理這個問題所需的專業嗎?',
+    detail: '這題在問:<strong>你自己有沒有掌握做出好決策的足夠資訊?</strong>包括事實、數據、專業判斷依據等等。<br><br><strong>兩個容易誤解的地方:</strong><br>(1) <strong>問的是「事情本身」的資訊,不是「怎麼讓部屬開心」的資訊。</strong>你需要的是達成決策目標所需的客觀知識,不是怎麼說服部屬接受。<br>(2) <strong>問的是「你的知識夠不夠應付這個問題」,不是「你比部屬懂多少」。</strong>即使部屬比你更懂,只要你自己掌握的已經足夠,LI 就高。即使部屬什麼都不懂,只要你自己也不夠,LI 就低。'
+  },
+  {
+    code: 'ST', name: '問題結構化程度', nameEn: 'Problem Structure',
+    scale: 'structure',
+    question: '這個問題是否「有清楚的解題路徑」?',
+    questionEn: 'Is the problem well structured?',
+    altQuestion: '你熟悉這類問題嗎?你清楚目前狀況、目標,以及達成目標的可行做法嗎?',
+    detail: '<strong>結構化問題</strong>指的是:<strong>起點清楚、終點清楚、走法也清楚</strong>——三者都已知。這種問題具有「可程式化」的潛力,可以寫成標準作業流程,甚至寫成電腦程式自動處理。<br><br>例:「制訂下學年招生名額」——有公式可套、有歷年數據可參考,屬於高度結構化(ST = 5)。<br><br><strong>非結構化問題</strong>則完全相反:<strong>目前狀況不清楚、目標模糊、轉換方法未知</strong>——任一條件成立,問題就趨於非結構化。這類問題往往定義不清,連問題範圍在哪裡都不確定。<br><br>例:「如何提升學生學習動機」——沒有標準解法,因人因地而異,屬於高度非結構化(ST = 1)。<br><br><strong>值得注意的是:</strong>同一個問題,<strong>對甲是結構化、對乙可能就是非結構化</strong>。處理過類似問題的人,腦中已建立解題框架;新手面對同樣問題則覺得撲朔迷離。<strong>問題結構化程度與經驗有關</strong>。'
+  },
+  {
+    code: 'CP', name: '承諾可能性', nameEn: 'Commitment Probability',
+    scale: 'probability',
+    question: '如果你獨自決定,部屬有多大機會願意配合?',
+    questionEn: 'If you were to make the decision by yourself, is it reasonably certain that your subordinates would be committed to the decision?',
+    altQuestion: '部屬會接受你的決定嗎?你要把方案「賣給」部屬,容易嗎?',
+    detail: '如果這個決策需要部屬配合(CR 高),你就需要找到能取得配合的決策方式。<strong>讓部屬參與</strong>是建立配合度的方法之一,但<strong>不是唯一的方法</strong>——有些情況下,你的決定即使是獨自做出的,部屬也會欣然接受。<br><br>這就要看你的「<strong>權力基礎</strong>」夠不夠強。權力來源主要有三種:<br><br>● <strong>法職權(Legitimate power)</strong>:部屬覺得「<strong>做這個決定本來就是你的職責</strong>」,因為組織賦予你這個位置應有的權威。<br>● <strong>專家權(Expert power)</strong>:部屬覺得「<strong>你比我們懂</strong>」,你在這個議題上的專業遠勝過他們。<br>● <strong>魅力權(Attraction power)</strong>:部屬<strong>敬佩你、想模仿你</strong>,他們重視你的肯定,把你當作典範。<br><br><strong>擁有這三種權力之一(或多種)的領導者,獨自決策時較容易取得部屬配合。</strong><br><br><strong>進階判斷:CP 是「相對」判斷,不是「絕對」判斷。</strong>需要的權力強度,要看「所需配合度」(CR)而定。CR 越高,你需要的權力越強才能讓部屬買單。所以這題不是在絕對地評估你「有多大權威」,而是在評估「<strong>你的權威 vs. 這個決策需要的配合度</strong>」是否相稱。<br><br><strong>特殊情境:</strong>如果部屬接不接受,<strong>取決於你選擇什麼方案</strong>(有些方案他們會欣然接受、有些會強力反對),那麼請以「<strong>最理性、最技術正確的方案</strong>」為基礎來判斷 CP——也就是想像「如果我堅持選擇正確答案,部屬會接受嗎?」'
+  },
+  {
+    code: 'GC', name: '目標一致性', nameEn: 'Goal Congruence',
+    scale: 'probability',
+    question: '部屬會「以組織利益為依歸」來解決這個問題嗎?',
+    questionEn: 'Do subordinates share the organizational goals to be attained in solving this problem?',
+    altQuestion: '你能信任部屬會選出「從組織立場最好的方案」嗎?在這個情境裡,雙方有「共同利益」嗎?',
+    detail: 'GC 講的是部屬的「<strong>動機</strong>」,不是他們的「<strong>能力</strong>」——這點要分清楚。<br><br>舉個例子:中古車業務員可能對車場上每輛車的狀況瞭若指掌(SI 高),但你會放心讓他幫你挑車嗎?<strong>不會</strong>——因為他的目標(賣車賺佣金)和你的目標(買到一台好車)不一致(GC 低)。<br><br>GC 要找的證據是:<strong>有沒有「共同目標」?有沒有「雙方都得利的領域」?</strong>當這些條件存在時,你和部屬就<strong>站在同一條船上</strong>,有共同的利害關係。<br><br><strong>反過來說,GC 不存在的情境是:</strong>部屬偏好且願意接受的方案,<strong>會傷害公司利益</strong>。他們可能傾向選擇對自己「輕鬆」、「舒適」、「對個人有利」的方案,而不是真正對組織最有利的方案。<br><br><strong>中間值(2、3、4)什麼時候用?</strong><br>● <strong>不確定部屬會追求什麼目標時</strong> → 用中間值<br>● <strong>「混合動機」情境</strong> → 部屬目標與組織目標部分重疊、部分衝突(例如,某方案對組織最好,但會增加部屬工作量)時,用中間值'
+  },
+  {
+    code: 'CO', name: '部屬衝突可能性', nameEn: 'Subordinate Conflict',
+    scale: 'conflict',
+    question: '部屬之間會不會「意見對立」?',
+    questionEn: 'Is conflict among subordinates over preferred solutions likely?',
+    altQuestion: '部屬之間會不會就「該怎麼做」產生重大歧見?這個議題會不會引起部屬針鋒相對?',
+    detail: 'CO 講的是:<strong>還沒開始討論協調之前</strong>,部屬們對解決方案是不是已經各有立場、互不相讓?<br><br>歧見的來源可能是:<strong>訓練背景不同、專業領域不同、利益不同、個人目標不同</strong>,或者<strong>問題本身就具有高度爭議性</strong>。<br><br><strong>❗ CO 與 GC 容易搞混,這裡要特別釐清:</strong>很多人會把「衝突」和「目標不一致」綁在一起,但兩者其實是<strong>不同維度</strong>的:<br>● 部屬目標都和組織一致,但對「怎麼達成」想法不同 → GC 高、CO 高<br>● 部屬目標一致,做法也一致 → GC 高、CO 低<br>● 部屬全體都反對組織目標,但反對方式一致 → GC 低、CO 低<br>● 部屬全體都反對組織目標,且各有各的反對方式 → GC 低、CO 高<br><br><strong>所以:目標一致 ≠ 不會衝突。</strong>即使大家都認同同一個目的,也可能對「達成手段」有完全不同的看法。'
+  },
+  {
+    code: 'SI', name: '部屬資訊充分度', nameEn: 'Subordinate Information',
+    scale: 'sufficiency',
+    question: '部屬有足夠的資訊做出好決策嗎?',
+    questionEn: 'Do subordinates have sufficient information to make a high-quality decision?',
+    altQuestion: '你的部屬具備處理這個問題所需的專業嗎?',
+    detail: '這題在問:<strong>部屬們(集體)的資訊與專業,夠不夠他們自己解決問題?</strong>(如果是個人問題,則是問該位單一部屬)<br><br>判斷的是「<strong>他們的知識相對於這個問題</strong>」,<strong>不是</strong>「他們的知識相對於你」。<br><br><strong>❗ 這題容易和 GC 搞混,要分清:</strong><br>● SI 問的是「<strong>他們會不會做</strong>」(能力與資訊)<br>● GC 問的是「<strong>他們會不會用心做</strong>」(動機與目標)<br><br>部屬可能很懂(SI 高),但不一定願意把這份專業用在組織利益上(GC 低)。<strong>懂不懂是一回事,願不願意又是另一回事</strong>。'
+  },
+  {
+    code: 'TC', name: '時間限制', nameEn: 'Time Constraint',
+    scale: 'binary',
+    question: '時間是否緊迫到「根本來不及讓部屬參與」?',
+    questionEn: 'Does a critically severe time constraint limit your ability to involve subordinates?',
+    altQuestion: '這是不是緊急狀況,必須立刻處理才能避免災難或錯失良機?',
+    detail: '某些決策必須當機立斷,<strong>多想兩分鐘問題就會惡化、機會就會流失</strong>。這類情境下,要召集部屬好好商量幾乎不可能——這就是 TC 所談的「嚴重時間限制」。<br><br><strong>但要注意:嚴重時間限制必須同時滿足兩個條件:</strong><br>(1) <strong>「做點什麼」比「來不及」更好。</strong>也就是說,趕上死線的「合理決定」,優於來不及的「完美決定」。<br>(2) <strong>即使部屬人都在身邊,參與式決策仍會導致來不及。</strong>時間真的短到讓討論變成奢侈。<br><br>例:化工廠突發瞬間火災 → <strong>這就是 TC = 是</strong>。<br><br><strong>重要洞見:即使是「危機」,這兩個條件也不一定同時成立。</strong>想想 1962 年甘迺迪的古巴飛彈危機——這算危機吧?但情勢仍然容許他與顧問<strong>討論了 13 天</strong>,才下令海軍封鎖。反過來說,如果你是足球教練,面對「第四檔僅剩數吋達陣」的處境,<strong>寧可立刻下決定也不要因為跟隊員討論而吃下「比賽延遲罰球」</strong>——這才是真正的 TC = 是。<br><br><strong>❗ TC 只能回答「是」或「否」。</strong>如果嚴重時間限制存在,通常很明顯,你不會猶豫。如果你連「到底有沒有時間限制」都判斷不出來,那答案幾乎可以肯定是「<strong>否</strong>」。'
+  },
+  {
+    code: 'GD', name: '地理分散性', nameEn: 'Geographical Dispersion',
+    scale: 'binary',
+    question: '部屬分散各地,召集成本高到無法承擔嗎?',
+    questionEn: 'Are the costs involved in bringing together geographically dispersed subordinates prohibitive?',
+    altQuestion: '受影響的人是否分散到「幾乎不可能聚在一起」的地步?',
+    detail: '有些情境下,部屬分散在不同地點,讓會議變得不切實際。例如,行銷副總的部屬可能是各區域經理,每個人駐在不同國家——要把他們聚起來開會非常困難。<br><br>不過,<strong>現在有飛機、有視訊會議,「絕對不可能」幾乎不存在</strong>。所以這題的核心是:<strong>權衡「召集成本」vs.「決策的重要性」</strong>。如果決策夠重要,再貴的差旅都值得。<br><br><strong>只要符合下列任一條件,本題回答「不會」:</strong><br>● 相關部屬就在同一棟樓、同一園區、同一地點<br>● 死線之前已經有定期會議要開<br>● 視訊會議可行,且成本不算過高<br>● 決策夠重要,值得為了開會出差<br><br><strong>只有上述條件全都不成立時,才回答「會」。</strong><br><br><strong>❗ GD 也只能回答「是」或「否」。</strong>如果部屬就在附近,判斷很簡單;如果分散各地,要先評估召集成本。但如果你發現自己在「也許」之間徘徊,那是你還沒做完評估——<strong>請仔細權衡成本與決策重要性,做出明確判斷</strong>。'
+  },
+  {
+    code: 'MT', name: '節省時間動機', nameEn: 'Motivation–Time',
+    scale: 'importance',
+    question: '「縮短決策所花的時間」對你而言有多重要?',
+    questionEn: 'How important is it to you to minimize the time it takes to make the decision?',
+    altQuestion: '你和部屬目前感受到的「時間壓力」有多大?',
+    detail: '每個管理決策都有「<strong>機會成本</strong>」——如果問題不存在,你和部屬本來可以把時間花在別的事情上。所以,<strong>做決策花掉的每一小時,都是真實的成本</strong>。<br><br>而模型在乎的是:<strong>不同決策方式,花的時間天差地遠</strong>(獨自決策 vs. 召集會議共識決,差幾天甚至幾週)。<br><br>MT 要問的就是:<strong>你有多想透過縮短決策時間,來節省成本?</strong><br><br><strong>判斷時要考量兩件事:</strong><br>(1) <strong>你個人的管理風格</strong> — 你向來是不是「重視效率、討厭拖延」的人?<br>(2) <strong>目前的工作壓力</strong> — 組織現在是忙到不可開交,還是相對輕鬆?<br>● 寬鬆時期 → 時間是「免費商品」 → MT 低<br>● 忙碌時期 → 時間是「奢侈品」 → MT 高<br><br><strong>重要原則:這題的答案不該天天變動。</strong>你的回答只會在以下兩種情況下改變:(a) 你決心改變自己的管理風格;(b) 你或部屬的工作量出現結構性變化。<br><br><strong>❗ 特別提醒:這題的答案,不應受其他題目影響。</strong>例如,如果你本來就不重視效率(MT = 1),不應該因為「這次有時間限制(TC)」或「部屬地理分散(GD)」就改答案。MT 是你和組織情境的<strong>長期特徵</strong>,不是當下決策的特徵。'
+  },
+  {
+    code: 'MD', name: '部屬發展動機', nameEn: 'Motivation–Development',
+    scale: 'importance',
+    question: '「藉這次決策培育部屬」對你而言有多重要?',
+    questionEn: 'How important is it to you to maximize the opportunities for subordinate development?',
+    altQuestion: '你有多重視「拓展部屬解決問題與技術的能力」?',
+    detail: '讓部屬參與決策,可以發展他們的管理與技術能力,也能促進團隊合作、改善工作關係,並讓他們更理解、更認同組織目標。某種意義上,<strong>參與式決策是組織「人力資本」的投資</strong>。<br><br>但要注意:<strong>這些好處不會自動產生</strong>。<strong>只有當部屬在參與過程中接觸到「新資訊、不同方法、新穎想法」時,效果才最明顯</strong>。<br><br>MD 要問的是:<strong>這些培育效益對你有多重要?</strong><br><br><strong>影響 MD 高低的因素:</strong><br>● <strong>文化背景</strong>:例如日本傳統終身僱用制下,員工發展遠比強調短期關係的國家重要<br>● <strong>個人風格</strong>:有些主管天生重視部屬成長<br>● <strong>組織需求</strong>:例如你六個月後要升遷或調職,<strong>繼任者要從部屬中選</strong>——那麼此刻培育他們就格外重要<br><br><strong>重要原則:同 MT,這題的答案也不該天天變動。</strong>只有兩種情況會讓你的回答改變:(a) 你決心改變自己的管理風格;(b) 組織對技術與管理人才的需求出現變化。<br><br><strong>❗ 一個重要的拮抗關係:</strong>「節省時間(MT)」和「培育部屬(MD)」往往互相衝突。同時把兩題都答 5 的主管,<strong>兩個目標都無法極大化</strong>。最終會在這兩種動機之間取得折衷平衡(其實 MT = MD = 3 時也是同樣情形)。換句話說:<strong>想又快又能訓練人是辦不到的。</strong>培育部屬就要花時間,要省時間就無法好好培育——你必須做出取捨。'
+  }
+];
+
+/** 量表標籤 — 採用通順口語化版本 */
+const SCALE_LABELS = {
+  importance: ['No Import', 'Low Import', 'Average', 'High Import', 'Critical'],
+  importanceTw: ['不重要', '不太重要', '普通', '重要', '極為關鍵'],
+  probability: ['No', 'Probably No', 'Maybe', 'Probably Yes', 'Yes'],
+  probabilityTw: ['不會', '大概不會', '也許會', '大概會', '一定會'],
+  sufficiency: ['No', 'Probably No', 'Maybe', 'Probably Yes', 'Yes'],
+  sufficiencyTw: ['不夠', '大概不夠', '也許吧', '大概夠', '完全夠'],
+  structure: ['No', 'Probably No', 'Maybe', 'Probably Yes', 'Yes'],
+  structureTw: ['沒路徑', '大概沒有', '也許有', '大概有', '完全清楚'],
+  conflict: ['No', 'Probably No', 'Maybe', 'Probably Yes', 'Yes'],
+  conflictTw: ['不會', '大概不會', '也許會', '大概會', '一定會']
+};
+
+/** Rescaling 對照表 */
+const RESCALE = {
+  QR: { 1:0, 2:1, 3:2, 4:3, 5:4 },
+  CR: { 1:0, 2:1, 3:2, 4:3, 5:4 },
+  MT: { 1:0, 2:1, 3:2, 4:3, 5:4 },
+  MD: { 1:0, 2:1, 3:2, 4:3, 5:4 },
+  LI: { 1:-1, 2:-0.75, 3:-0.5, 4:-0.25, 5:0 },
+  ST: { 1:-1, 2:-0.75, 3:-0.5, 4:-0.25, 5:0 },
+  CP: { 1:-1, 2:-0.75, 3:-0.5, 4:-0.25, 5:0 },
+  GC: { 1:-1, 2:-0.75, 3:-0.5, 4:-0.25, 5:0 },
+  SI: { 1:-1, 2:-0.75, 3:-0.5, 4:-0.25, 5:0 },
+  CO: { 1:0, 2:0.25, 3:0.5, 4:0.75, 5:1 },
+  TC: { 1:0, 5:1 },
+  GD: { 1:0, 5:1 }
+};
+
+/** 決策過程係數 */
+const PROCESSES_GROUP = {
+  AI:  { f1: -1.0, f2: -1, f3:  0, f4: 1 },
+  AII: { f1: -0.9, f2:  0, f3:  0, f4: 1 },
+  CI:  { f1: -0.5, f2:  0, f3:  0, f4: 1 },
+  CII: { f1: -0.2, f2:  0, f3:  0, f4: 0 },
+  GII: { f1:  0,   f2:  0, f3: -1, f4: 0 }
+};
+
+const PROCESSES_INDIV = {
+  AI:  { f1: -1.0, f2: -1, f3:  0, f4: 1, f5:  0, f6: -1.0 },
+  AII: { f1: -0.9, f2:  0, f3:  0, f4: 1, f5:  0, f6: -0.5 },
+  CI:  { f1: -0.5, f2:  0, f3:  0, f4: 0, f5:  0, f6: -0.2 },
+  GI:  { f1: -0.2, f2:  0, f3:  0, f4: 0, f5: -1, f6:  0   },
+  DI:  { f1:  0,   f2:  0, f3: -1, f4: 0, f5:  0, f6: -0.9 }
+};
+
+/** 同分時的優先順序 */
+const PRIORITY_GROUP = ['AI', 'AII', 'CI', 'CII', 'GII'];
+const PRIORITY_INDIV = ['AI', 'DI', 'AII', 'CI', 'GI'];
+
+/** 五種決策過程的中英文定義 */
+const PROCESS_DEFS = {
+  group: {
+    AI:  { tw: '純獨裁',     en: 'Autocratic I',     desc: '領導者運用現有資訊獨自做出決策,不徵詢部屬意見。' },
+    AII: { tw: '諮詢式獨裁', en: 'Autocratic II',    desc: '領導者向部屬蒐集必要資訊,但仍由領導者獨自決策；部屬僅作為資訊來源,未參與方案的產生與評估。' },
+    CI:  { tw: '個別諮詢',   en: 'Consultative I',   desc: '領導者個別與相關部屬討論問題、徵詢意見,但最終決策由領導者獨自作出（可採納或不採納部屬意見）。' },
+    CII: { tw: '團體諮詢',   en: 'Consultative II',  desc: '領導者召集部屬於團體會議中分享問題、共同討論,但最終決策仍由領導者作出（可能反映或不反映部屬建議）。' },
+    GII: { tw: '團體共識',   en: 'Group II',         desc: '領導者與部屬以團體形式共同討論問題,共同產生方案、評估方案,並達成共識性決策；領導者扮演主席而非決策者。' }
+  },
+  individual: {
+    AI:  { tw: '純獨裁',     en: 'Autocratic I',     desc: '領導者運用現有資訊獨自做出決策。' },
+    AII: { tw: '諮詢式獨裁', en: 'Autocratic II',    desc: '領導者向該部屬蒐集資訊,但仍獨自決策。' },
+    CI:  { tw: '個別諮詢',   en: 'Consultative I',   desc: '領導者與該部屬討論問題,徵詢其想法與建議,但最終由領導者決策。' },
+    GI:  { tw: '共同分析',   en: 'Group I',          desc: '領導者與該部屬共同分析問題,合作達成雙方都能接受的共識性決策。' },
+    DI:  { tw: '授權委派',   en: 'Delegate I',       desc: '領導者將問題與決策權完全授權給該部屬,並提供必要資源與支持,部屬擁有完整的決策自主權。' }
+  }
+};
+
+/* ============================================================
+   2. 計算引擎
+   ============================================================ */
+
+/**
+ * 將 1-5 原始輸入重新編碼為計算用數值
+ * @param {Object} rawInputs - 原始輸入物件 {QR:5, CR:4, ...}
+ * @param {string} problemType - 'group' | 'individual'
+ * @returns {Object} 重新編碼後的數值物件
+ */
+function rescaleAttributes(rawInputs, problemType) {
+  const scaled = {};
+  const keys = ['QR','CR','LI','ST','CP','GC','CO','SI','TC','MT','MD'];
+  if (problemType === 'group') keys.push('GD');
+  for (const k of keys) {
+    if (rawInputs[k] === undefined || rawInputs[k] === null) {
+      scaled[k] = 0;
+    } else {
+      scaled[k] = RESCALE[k][rawInputs[k]];
+    }
+  }
+  // 個人問題:GD 不適用,設為 0
+  if (problemType === 'individual') scaled.GD = 0;
+  return scaled;
+}
+
+/**
+ * 團體模型計算
+ * @param {Object} s - rescaled 屬性 {QR, CR, ...}
+ * @param {Object} c - 過程係數 {f1, f2, f3, f4}
+ * @returns {Object} {D_Qual, D_Comm, D_TP, Cost, Devpt, D_Eff, O_Eff}
+ */
+function calculateGroupModel(s, c) {
+  const { QR, CR, LI, ST, CP, GC, CO, SI, TC, GD, MT, MD } = s;
+  const { f1, f2, f3, f4 } = c;
+
+  const D_Qual = QR - (QR/2) * (
+    (f2*LI) + (f4*LI*ST) + (f3*GC)
+    + (f1*LI*(1+GC)*CO/2)
+    + (f3*SI/2)
+  );
+
+  const D_Comm = CR - (CR/2) * (
+    (f1*CP) - ((f3+f4+1)*CO*CP/2)
+  );
+
+  const D_TP = (D_Qual + D_Comm) * (1+f1) * TC;
+
+  const Cost = (MT/6) * (
+    (1+f1)*(1-ST) - ((f3+f4-1)*CO/2)
+  ) - 5*(f4-1)*GD;
+
+  // 注意:依 Vroom & Jago (1988) 原書 p.184, Devpt 用 (1+f1) 而非 (1+f4)
+  const Devpt = (MD/24) * QR * (
+    (1+f1) - ((f3+f4-1)*(GC+0.5)*CO)
+  );
+
+  const D_Eff = D_Qual + D_Comm - D_TP;
+  const O_Eff = D_Eff - Cost + Devpt;
+
+  return { D_Qual, D_Comm, D_TP, Cost, Devpt, D_Eff, O_Eff };
+}
+
+/**
+ * 個人模型計算
+ * @param {Object} s - rescaled 屬性
+ * @param {Object} c - 過程係數 {f1...f6}
+ * @returns {Object} {D_Qual, D_Comm, D_TP, Cost, Devpt, D_Eff, O_Eff}
+ */
+function calculateIndividualModel(s, c) {
+  const { QR, CR, LI, ST, CP, GC, CO, SI, TC, MT, MD } = s;
+  const { f1, f2, f3, f4, f5, f6 } = c;
+
+  const D_Qual = QR - (QR/2) * (
+    (f2*LI) + (f4*LI*ST) + 2*(f3*GC) + 2*(f3*SI)
+    + (f6*LI*(1+GC)*CO/2)
+    + (f5*GC*(1+(CR*CP/4)))
+  );
+
+  const D_Comm = CR - CR * (f1*CP);
+
+  const D_TP = ( (D_Qual+D_Comm)*(1+f6) + (f3*QR*(SI+GC)) ) * TC;
+
+  const Cost = (MT/6) * ( (1+f6)*(1-ST) - (f5*CO) );
+
+  const Devpt = (MD/24) * QR * ( (1+f1) - 2*(f5*(GC+0.5)*CO) );
+
+  const D_Eff = D_Qual + D_Comm - D_TP;
+  const O_Eff = D_Eff - Cost + Devpt;
+
+  return { D_Qual, D_Comm, D_TP, Cost, Devpt, D_Eff, O_Eff };
+}
+
+/**
+ * 對所有決策過程進行評估
+ * @param {Object} scaled - rescaled 屬性
+ * @param {string} problemType - 'group' | 'individual'
+ * @returns {Object} {AI: {...}, AII: {...}, ...}
+ */
+function evaluateAllProcesses(scaled, problemType) {
+  const procs = problemType === 'group' ? PROCESSES_GROUP : PROCESSES_INDIV;
+  const calc  = problemType === 'group' ? calculateGroupModel : calculateIndividualModel;
+  const out = {};
+  for (const name of Object.keys(procs)) {
+    out[name] = calc(scaled, procs[name]);
+  }
+  return out;
+}
+
+/**
+ * 取得推薦的決策過程（O_Eff 最大者；同分時依優先順序）
+ * @param {Object} results - evaluateAllProcesses 的輸出
+ * @param {string} problemType
+ * @returns {string} 推薦過程的代碼
+ */
+function getRecommendedProcess(results, problemType) {
+  const priority = problemType === 'group' ? PRIORITY_GROUP : PRIORITY_INDIV;
+  let best = null, bestScore = -Infinity, bestPriority = Infinity;
+  for (const name of Object.keys(results)) {
+    const score = results[name].O_Eff;
+    const pIdx = priority.indexOf(name);
+    if (score > bestScore + 1e-9) {
+      best = name; bestScore = score; bestPriority = pIdx;
+    } else if (Math.abs(score - bestScore) < 1e-9) {
+      if (pIdx < bestPriority) { best = name; bestPriority = pIdx; }
+    }
+  }
+  return best;
+}
+
+/**
+ * 取得排名後的過程清單
+ */
+function getRankedProcesses(results, problemType) {
+  const priority = problemType === 'group' ? PRIORITY_GROUP : PRIORITY_INDIV;
+  return Object.entries(results)
+    .map(([name, r]) => ({ name, ...r, priorityIdx: priority.indexOf(name) }))
+    .sort((a, b) => {
+      if (Math.abs(a.O_Eff - b.O_Eff) > 1e-9) return b.O_Eff - a.O_Eff;
+      return a.priorityIdx - b.priorityIdx;
+    });
+}
+
+/* ============================================================
+   3. 解釋生成器
+   ============================================================ */
+
+/**
+ * 根據推薦結果產生解釋文字段落
+ */
+function generateExplanation(rawInputs, scaled, recommended, problemType) {
+  const defs = problemType === 'group' ? PROCESS_DEFS.group : PROCESS_DEFS.individual;
+  const def = defs[recommended];
+  const r = rawInputs;
+  const out = [];
+
+  // (1) 為何推薦
+  let why = `根據您的診斷,系統推薦採用 <strong>${recommended}（${def.tw}）</strong>。本決策過程的整體效能 (O_Eff) 在五種選項中最高,反映其在「決策品質」、「部屬承諾」、「時間成本」與「人才發展」四個面向之間取得最佳平衡。`;
+
+  // 引用關鍵屬性
+  const cues = [];
+  if (r.QR >= 4) cues.push(`品質要求高 (QR=${r.QR})`);
+  if (r.QR <= 2) cues.push(`品質要求低 (QR=${r.QR})`);
+  if (r.CR >= 4) cues.push(`承諾要求高 (CR=${r.CR})`);
+  if (r.CR <= 2) cues.push(`承諾要求低 (CR=${r.CR})`);
+  if (r.LI <= 2) cues.push(`領導者資訊不足 (LI=${r.LI})`);
+  if (r.GC >= 4) cues.push(`部屬目標一致性高 (GC=${r.GC})`);
+  if (r.GC <= 2) cues.push(`部屬目標一致性低 (GC=${r.GC})`);
+  if (r.CO >= 4) cues.push(`部屬衝突可能性高 (CO=${r.CO})`);
+  if (r.SI >= 4) cues.push(`部屬資訊充分 (SI=${r.SI})`);
+  if (r.TC === 5) cues.push(`時間極度緊迫 (TC=Yes)`);
+  if (problemType === 'group' && r.GD === 5) cues.push(`部屬地理分散 (GD=Yes)`);
+  if (cues.length) {
+    why += `<br><br>關鍵診斷指標包括：${cues.map(c => `<strong>${c}</strong>`).join('、')}。這些屬性共同形塑了本決策情境的特徵,使得 ${recommended} 成為最適選擇。`;
+  }
+  out.push({ title: '為何推薦此決策過程', body: why });
+
+  // (2) 過程簡介
+  out.push({ title: `${recommended}（${def.tw}）的內涵`, body: def.desc });
+
+  // (3) 實施建議
+  const tipsGroup = {
+    AI:  ['迅速基於現有資訊作出決定,不需召集會議。', '決策後應簡明扼要地告知部屬決策內容與必要的執行說明。'],
+    AII: ['先向關鍵部屬蒐集所需資訊（可一對一或書面）,但不揭露決策本身。','蒐集到足夠資訊後,獨立做出判斷並下達指示。'],
+    CI:  ['依序與相關部屬個別會談,徵詢其見解與建議。','綜合各方意見後,由您獨立做出最終決策。','決策不必反映多數意見,但應展現對每位被諮詢者意見的尊重。'],
+    CII: ['召集部屬於團體會議中,公開分享問題並徵詢意見。','您主導會議流程,但保留最終決策權。','會議後可說明決策考量,即使未完全採納部屬建議。'],
+    GII: ['以團體會議形式,您僅擔任主席,協助引導討論。','鼓勵部屬主動產生方案、評估方案。','尋求共識,在多元意見中收斂出大家都能接受的決定,您不應利用權威操控結果。']
+  };
+  const tipsIndiv = {
+    AI:  ['基於現有資訊獨自決定,毋須與該部屬討論。','決策後簡要告知該部屬。'],
+    AII: ['先向該部屬蒐集事實性資訊（不揭露決策意圖）。','取得資訊後獨立決策。'],
+    CI:  ['與該部屬一對一深入討論,徵詢其想法。','聽取後由您獨立做出最終決策,可採納或不採納其建議。'],
+    GI:  ['以平等夥伴方式與該部屬共同分析問題。','尋求雙方都能接受的共識方案,您不應強行主導。'],
+    DI:  ['將問題與決策權完整授權給該部屬。','提供必要資源、資訊與支持,但不干預其決策過程。','確認該部屬瞭解授權範圍與責任,並接受其最終決定。']
+  };
+  const tips = problemType === 'group' ? tipsGroup[recommended] : tipsIndiv[recommended];
+  out.push({ title: '實施建議', body: '<ul>' + tips.map(t => `<li>${t}</li>`).join('') + '</ul>' });
+
+  // (4) 注意事項
+  const cautions = [];
+  if (recommended === 'AI' || recommended === 'AII') {
+    if (r.CR >= 4) cautions.push('雖然系統推薦獨裁式決策,但承諾要求較高,決策後務必清楚溝通決策理由,以維持部屬支持。');
+    if (r.CP <= 2) cautions.push('部屬接受獨自決策的可能性偏低,建議在決策後額外進行說明會或一對一溝通,降低抗拒。');
+  }
+  if (recommended === 'CI' || recommended === 'CII') {
+    if (r.CO >= 4) cautions.push('部屬之間可能存在衝突,團體會議形式（CII）較能公開處理分歧；若您採用 CI,則需個別調和不同立場。');
+    cautions.push('諮詢後若未完全採納部屬建議,務必清楚說明您的決策邏輯,以維護信任關係。');
+  }
+  if (recommended === 'GII' || recommended === 'GI') {
+    if (r.GC <= 3) cautions.push('部屬目標一致性不算高,團體共識過程中需特別留意是否有派系利益凌駕組織利益。');
+    cautions.push('採用共識決策時,您應避免運用職權壓制不同意見,讓討論真正開放。');
+    if (r.TC === 5) cautions.push('注意：時間限制嚴重的情境下,團體共識可能難以及時達成,需審慎評估時程。');
+  }
+  if (recommended === 'DI') {
+    cautions.push('授權後不應頻繁干預,給予該部屬足夠的決策空間,但保持資源支援與必要溝通。');
+    if (r.SI <= 2) cautions.push('該部屬資訊充分度偏低,授權前建議協助其取得必要資料與專業諮詢管道。');
+  }
+  if (problemType === 'group' && r.GD === 5 && (recommended === 'CII' || recommended === 'GII')) {
+    cautions.push('部屬地理分散,召集團體會議成本較高,可考慮善用視訊會議與非同步協作工具。');
+  }
+  if (cautions.length === 0) cautions.push('在執行過程中保持開放溝通,並適時檢視決策成效。');
+  out.push({ title: '注意事項', body: '<ul>' + cautions.map(c => `<li>${c}</li>`).join('') + '</ul>' });
+
+  return out;
+}
+
+/* ============================================================
+   4. UI 控制器
+   ============================================================ */
+
+/** 應用狀態 */
+const state = {
+  step: 0,             // 0=welcome, 1=scenario, 2=questions, 3=result
+  problemType: null,   // 'group' | 'individual'
+  scenario: '',
+  answers: {},         // {QR: 4, CR: 5, ...}
+  results: null,
+  recommended: null
+};
+
+const app = document.getElementById('app');
+const headerStep = document.getElementById('header-step');
+
+/** 主渲染函式,根據 state.step 切換頁面 */
+function render() {
+  const stepNames = ['Welcome', 'Scenario', 'Diagnosis', 'Report'];
+  headerStep.textContent = `— Step ${state.step} · ${stepNames[state.step]} —`;
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (state.step === 0) renderWelcome();
+  else if (state.step === 1) renderScenario();
+  else if (state.step === 2) renderQuestions();
+  else if (state.step === 3) renderResult();
+}
+
+/** Step 0:歡迎頁 */
+function renderWelcome() {
+  const procRowsGroup = Object.entries(PROCESS_DEFS.group).map(([k, v]) =>
+    `<tr><td class="proc-code">${k}</td><td class="proc-name">${v.tw}<br><span style="font-style:italic;color:var(--ink-mute);font-size:12px">${v.en}</span></td><td>${v.desc}</td></tr>`
+  ).join('');
+  const procRowsIndiv = Object.entries(PROCESS_DEFS.individual).map(([k, v]) =>
+    `<tr><td class="proc-code">${k}</td><td class="proc-name">${v.tw}<br><span style="font-style:italic;color:var(--ink-mute);font-size:12px">${v.en}</span></td><td>${v.desc}</td></tr>`
+  ).join('');
+
+  app.innerHTML = `
+    <div class="welcome">
+      <div class="welcome-eyebrow">Normative Decision Model · Expert System</div>
+      <h1 class="welcome-title">Vroom-Jago<br><em>規範性決策模式</em>診斷系統</h1>
+      <div class="welcome-title-en">A Normative Model of Participation in Decision Making</div>
+      <div class="welcome-cite">
+        Based on <strong>Vroom &amp; Yetton (1973)</strong> · <em>Leadership and Decision-Making</em><br>
+        Extended by <strong>Vroom &amp; Jago (1988)</strong> · <em>The New Leadership</em>
+      </div>
+      <p class="welcome-intro">
+        本系統依循 Vroom-Jago 規範模型,透過診斷 <strong>12 項問題屬性</strong>,
+        以模型方程式計算五種決策過程的 <strong>整體效能（Overall Effectiveness）</strong>,
+        並推薦在當前情境下最適合您的決策方式。系統適用於組織理論教學、領導力培訓、
+        以及實務管理者於關鍵決策前的自我診斷。
+      </p>
+
+      <div class="problem-choose-label">— 選擇問題類型 / Choose Problem Type —</div>
+      <div class="problem-cards">
+        <button class="problem-card" data-type="group">
+          <div class="problem-card-num">— Type A —</div>
+          <div class="problem-card-title">團體問題</div>
+          <div class="problem-card-en">Group Problem</div>
+          <div class="problem-card-desc">
+            決策影響的是<strong>多位部屬</strong>,需評估群體層次的承諾、衝突與地理分散等因素。
+            <br><em style="color:var(--ink-mute);font-size:13px">適用於:課程委員會決議、系所政策、團隊預算分配等</em>
+          </div>
+          <div class="problem-card-arrow">開始診斷 →</div>
+        </button>
+        <button class="problem-card" data-type="individual">
+          <div class="problem-card-num">— Type B —</div>
+          <div class="problem-card-title">個人問題</div>
+          <div class="problem-card-en">Individual Problem</div>
+          <div class="problem-card-desc">
+            決策影響的是<strong>單一部屬</strong>,可考慮授權委派 (DI) 等個人化決策方式。
+            <br><em style="color:var(--ink-mute);font-size:13px">適用於:個別教師工作分派、生涯輔導、單一部屬績效議題等</em>
+          </div>
+          <div class="problem-card-arrow">開始診斷 →</div>
+        </button>
+      </div>
+
+      <details class="disclosure">
+        <summary>📖 模型理論說明 / Theoretical Background</summary>
+        <div class="disclosure-body">
+          <p>
+            <strong>Victor H. Vroom</strong> 與 <strong>Philip W. Yetton</strong> 於 1973 年提出規範性決策模型,
+            主張領導者「參與式決策」並非全有全無,而應依情境屬性靈活選擇五種決策過程之一。
+            1988 年,<strong>Arthur G. Jago</strong> 與 Vroom 將原本的決策樹擴充為包含 12 項屬性的數學模型,
+            可同時評估「決策品質、部屬承諾、決策時間、機會成本、發展機會」五個面向,
+            計算每種決策過程的整體效能。
+          </p>
+          <p style="margin-top:12px">
+            在教育行政情境中,本模型可協助校長、主任、系所主管針對特定議題（如:課程改革、
+            人事任用、危機處理、學生輔導）診斷最合適的決策參與程度,避免因「過度獨裁」損害部屬承諾,
+            或因「過度民主」導致決策延宕與品質失控。
+          </p>
+        </div>
+      </details>
+
+      <details class="disclosure">
+        <summary>🟦 五種決策過程定義 — 團體問題 / Group Problem</summary>
+        <div class="disclosure-body">
+          <table class="process-table">
+            <thead><tr><th>代碼</th><th>名稱</th><th>說明</th></tr></thead>
+            <tbody>${procRowsGroup}</tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="disclosure">
+        <summary>🟨 五種決策過程定義 — 個人問題 / Individual Problem</summary>
+        <div class="disclosure-body">
+          <table class="process-table">
+            <thead><tr><th>代碼</th><th>名稱</th><th>說明</th></tr></thead>
+            <tbody>${procRowsIndiv}</tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  `;
+
+  // 綁定問題類型按鈕
+  document.querySelectorAll('.problem-card').forEach(b => {
+    b.addEventListener('click', () => {
+      state.problemType = b.dataset.type;
+      state.answers = {};
+      state.scenario = '';
+      state.step = 1;
+      render();
+    });
+  });
+}
+
+/** Step 1:情境輸入 */
+function renderScenario() {
+  const typeLabel = state.problemType === 'group' ? '團體問題 · Group Problem' : '個人問題 · Individual Problem';
+  app.innerHTML = `
+    <div class="welcome">
+      <div class="section-eyebrow">Step 1 · ${typeLabel}</div>
+      <h2 class="section-title">描述您的決策情境</h2>
+      <div class="section-title-en">Describe the Decision Scenario</div>
+      <p class="section-intro">
+        以一兩句話描述您正在面對的決策情境。這段描述會出現在最終的診斷報告中,
+        作為決策紀錄的一部分。<em>（此步驟為選填,可直接跳過進入診斷）</em>
+      </p>
+      <textarea class="scenario-input" id="scenario-input" placeholder="例如:本系是否要在 115 學年度推行全面的 EMI（全英語授課）課程改革?此政策涉及全體授課教師..."></textarea>
+      <div class="scenario-hint">— 此資訊僅在您本機處理,不會傳送至任何伺服器 —</div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="next-btn">進入屬性診斷 →</button>
+        <button class="btn btn-text" id="back-btn">← 返回上一步</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('scenario-input').value = state.scenario;
+  document.getElementById('next-btn').addEventListener('click', () => {
+    state.scenario = document.getElementById('scenario-input').value.trim();
+    state.step = 2;
+    render();
+  });
+  document.getElementById('back-btn').addEventListener('click', () => {
+    state.scenario = document.getElementById('scenario-input').value.trim();
+    state.step = 0; render();
+  });
+}
+
+/** Step 2:12 題屬性診斷 */
+function renderQuestions() {
+  const isGroup = state.problemType === 'group';
+  const typeLabel = isGroup ? '團體問題 · Group Problem' : '個人問題 · Individual Problem';
+
+  // 個人問題跳過 GD;個人問題的 CO 題目調整
+  const questions = ATTRIBUTES.filter(a => !(a.code === 'GD' && !isGroup)).map(a => {
+    if (!isGroup && a.code === 'CO') {
+      return {
+        ...a,
+        question: '您與該部屬之間就偏好的解決方案產生衝突的可能性有多高？',
+        questionEn: 'Is conflict between you and the subordinate over preferred solutions likely?',
+        altQuestion: '您預期該部屬會強烈反對您傾向的方案嗎？'
+      };
+    }
+    return a;
+  });
+
+  const totalQ = questions.length;
+  const answeredCount = questions.filter(q => state.answers[q.code] !== undefined).length;
+  const progressPct = Math.round((answeredCount / totalQ) * 100);
+
+  let html = `
+    <div class="section-eyebrow">Step 2 · ${typeLabel}</div>
+    <h2 class="section-title">12 項屬性診斷</h2>
+    <div class="section-title-en">Diagnose ${totalQ} Problem Attributes</div>
+    <p class="section-intro">
+      請依您的判斷,對每項屬性給予 1–5 分評分（時間限制與地理分散為「是 / 否」二選一）。
+      可隨時展開「💡 替代問句」與「📘 詳細說明」協助理解。
+    </p>
+
+    <div class="progress-bar">
+      <div class="progress-track"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+      <div class="progress-text">${answeredCount} / ${totalQ} · ${progressPct}%</div>
+    </div>
+  `;
+
+  questions.forEach((q, idx) => {
+    const num = idx + 1;
+    const ans = state.answers[q.code];
+    const answered = ans !== undefined;
+    const isBinary = q.scale === 'binary';
+
+    let scaleHtml = '';
+    if (isBinary) {
+      // TC / GD 二元
+      const yesLabel = q.code === 'TC' ? '時間極度緊迫' : '部屬地理分散';
+      const noLabel  = q.code === 'TC' ? '時間充裕' : '部屬同處一地';
+      scaleHtml = `
+        <div class="binary-row">
+          <button class="binary-btn ${ans === 1 ? 'selected' : ''}" data-code="${q.code}" data-val="1">
+            <span class="bb-yn">否 · No</span>
+            <span class="bb-en">${noLabel}</span>
+          </button>
+          <button class="binary-btn ${ans === 5 ? 'selected' : ''}" data-code="${q.code}" data-val="5">
+            <span class="bb-yn">是 · Yes</span>
+            <span class="bb-en">${yesLabel}</span>
+          </button>
+        </div>
+      `;
+    } else {
+      // 1-5 量表
+      const goldMode = (q.scale === 'importance');
+      // 依 scale 類型選擇對應的英文與中文標籤
+      const labelsMap = {
+        importance:  [SCALE_LABELS.importance,  SCALE_LABELS.importanceTw],
+        probability: [SCALE_LABELS.probability, SCALE_LABELS.probabilityTw],
+        sufficiency: [SCALE_LABELS.sufficiency, SCALE_LABELS.sufficiencyTw],
+        structure:   [SCALE_LABELS.structure,   SCALE_LABELS.structureTw],
+        conflict:    [SCALE_LABELS.conflict,    SCALE_LABELS.conflictTw]
+      };
+      const [labels, labelsTw] = labelsMap[q.scale] || labelsMap.probability;
+      const circles = [1,2,3,4,5].map(n => {
+        const sel = ans === n ? `selected ${goldMode ? 'gold-mode' : ''}` : '';
+        return `<button class="scale-circle ${sel}" data-code="${q.code}" data-val="${n}">${n}</button>`;
+      }).join('');
+      scaleHtml = `
+        <div class="scale-row">
+          <div class="scale-circles">${circles}</div>
+        </div>
+        <div class="scale-labels">
+          <span>1 · ${labels[0]}</span>
+          <span>5 · ${labels[4]}</span>
+        </div>
+        <div class="scale-label-mid">
+          <span style="font-family:var(--serif);color:var(--ink-mute)">${labelsTw[0]}</span>
+          <span style="font-family:var(--serif);color:var(--ink-mute)">${labelsTw[2]}</span>
+          <span style="font-family:var(--serif);color:var(--ink-mute)">${labelsTw[4]}</span>
+        </div>
+      `;
+    }
+
+    html += `
+      <section class="question-block ${answered ? 'answered' : ''}" id="q-${q.code}">
+        <div class="question-header">
+          <span class="question-num">Q ${String(num).padStart(2, '0')}</span>
+          <span class="question-code">${q.code}</span>
+          <span class="question-name">${q.name}</span>
+          <span class="question-name-en">${q.nameEn}</span>
+        </div>
+        <div class="question-text">${q.question}</div>
+        <div class="question-text-en">${q.questionEn}</div>
+        ${scaleHtml}
+        <div class="q-aux">
+          <details>
+            <summary>💡 替代問句 · Alternative Question</summary>
+            <div class="aux-body"><em>${q.altQuestion}</em></div>
+          </details>
+          <details>
+            <summary>📘 詳細說明 · Definition</summary>
+            <div class="aux-body">${q.detail}</div>
+          </details>
+        </div>
+      </section>
+    `;
+  });
+
+  html += `
+    <div class="btn-row" style="margin-top:36px">
+      <button class="btn btn-gold" id="calc-btn" ${answeredCount < totalQ ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
+        計算結果 · Compute Result →
+      </button>
+      <button class="btn btn-ghost" id="back-btn">← 修改情境</button>
+      <button class="btn btn-text" id="reset-btn">🔄 重新開始</button>
+    </div>
+    ${answeredCount < totalQ ? `<div style="margin-top:14px;font-size:13px;color:var(--ink-mute);font-style:italic">— 尚有 ${totalQ - answeredCount} 題未作答 —</div>` : ''}
+  `;
+
+  app.innerHTML = html;
+
+  // 綁定量表
+  document.querySelectorAll('.scale-circle, .binary-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const code = b.dataset.code;
+      const val = parseInt(b.dataset.val, 10);
+      state.answers[code] = val;
+      // 局部更新此題視覺
+      renderQuestions();
+      // 自動捲動到下一題
+      setTimeout(() => {
+        const cur = document.getElementById(`q-${code}`);
+        if (cur) {
+          const idx = questions.findIndex(qq => qq.code === code);
+          const next = questions[idx + 1];
+          if (next) {
+            const nextEl = document.getElementById(`q-${next.code}`);
+            if (nextEl && state.answers[next.code] === undefined) {
+              nextEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+        }
+      }, 150);
+    });
+  });
+
+  document.getElementById('calc-btn')?.addEventListener('click', () => {
+    if (Object.keys(state.answers).length < totalQ) return;
+    computeAndShow();
+  });
+  document.getElementById('back-btn')?.addEventListener('click', () => {
+    state.step = 1; render();
+  });
+  document.getElementById('reset-btn')?.addEventListener('click', () => {
+    if (confirm('確定要重新開始嗎?目前的作答將清除。')) {
+      state.step = 0; state.answers = {}; state.scenario = ''; state.problemType = null;
+      render();
+    }
+  });
+}
+
+/** 執行計算並切換至報告頁 */
+function computeAndShow() {
+  const scaled = rescaleAttributes(state.answers, state.problemType);
+  const results = evaluateAllProcesses(scaled, state.problemType);
+  const recommended = getRecommendedProcess(results, state.problemType);
+  state.results = { scaled, results, recommended };
+  state.recommended = recommended;
+  state.step = 3;
+  render();
+}
+
+/** Step 3:結果報告 */
+function renderResult() {
+  const { scaled, results, recommended } = state.results;
+  const isGroup = state.problemType === 'group';
+  const defs = isGroup ? PROCESS_DEFS.group : PROCESS_DEFS.individual;
+  const def = defs[recommended];
+  const ranked = getRankedProcesses(results, state.problemType);
+
+  // 找最大絕對值供長條圖比例
+  const maxAbs = Math.max(...ranked.map(r => Math.abs(r.O_Eff)), 0.01);
+
+  // (B) 比較表
+  const tableRows = ranked.map((r, i) => {
+    const rec = r.name === recommended;
+    const f = (x) => x.toFixed(2);
+    return `
+      <tr class="${rec ? 'recommended' : ''}">
+        <td>${r.name} <span style="font-family:var(--serif);font-style:italic;font-weight:400;color:var(--ink-mute);font-size:12px">${defs[r.name].tw}</span></td>
+        <td>${f(r.D_Qual)}</td>
+        <td>${f(r.D_Comm)}</td>
+        <td>${f(r.D_TP)}</td>
+        <td>${f(r.Cost)}</td>
+        <td>${f(r.Devpt)}</td>
+        <td>${f(r.D_Eff)}</td>
+        <td class="col-oeff">${f(r.O_Eff)}</td>
+        <td><span class="col-rank">${i + 1}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  // 長條圖（左右對稱,中央 0)
+  const chartRows = ranked.map(r => {
+    const rec = r.name === recommended;
+    const pct = Math.abs(r.O_Eff) / maxAbs * 50; // 最大 50%（半邊）
+    const isNeg = r.O_Eff < 0;
+    const left = isNeg ? (50 - pct) : 50;
+    const cls = rec ? 'gold' : (isNeg ? 'negative' : '');
+    return `
+      <div class="chart-row">
+        <div class="chart-label">${r.name}</div>
+        <div class="chart-track">
+          <div class="chart-bar ${cls}" style="left:${left}%; width:${pct}%"></div>
+        </div>
+        <div class="chart-value">${r.O_Eff.toFixed(2)}</div>
+      </div>
+    `;
+  }).join('');
+
+  // (C) 屬性回顧
+  const reviewKeys = ['QR','CR','LI','ST','CP','GC','CO','SI','TC','MT','MD'];
+  if (isGroup) reviewKeys.splice(9, 0, 'GD');
+  const attrCells = reviewKeys.map(k => {
+    const a = ATTRIBUTES.find(x => x.code === k);
+    return `
+      <div class="attr-cell">
+        <div class="ac-code">${k}</div>
+        <div class="ac-name">${a.name}</div>
+        <div class="ac-vals">
+          <div class="ac-raw"><span class="ac-raw-label">原始</span><span class="ac-raw-val">${state.answers[k]}</span></div>
+          <div class="ac-scaled"><span class="ac-scaled-label">編碼</span><span class="ac-scaled-val">${scaled[k]}</span></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // (D) 解釋
+  const explanations = generateExplanation(state.answers, scaled, recommended, state.problemType);
+  const explanationHtml = explanations.map(e => `
+    <div class="explanation-section">
+      <h4>${e.title}</h4>
+      ${e.body.startsWith('<') ? e.body : '<p>' + e.body + '</p>'}
+    </div>
+  `).join('');
+
+  app.innerHTML = `
+    <div class="report-banner">
+      <div class="report-banner-eyebrow">Decision Recommendation</div>
+      <div class="report-rec-label">建議採用 · Recommended Process</div>
+      <div class="report-rec-name">
+        <span class="rec-code">${recommended}</span>${def.tw}
+      </div>
+      <div class="report-rec-en">${def.en}</div>
+      <div class="report-rec-desc">${def.desc}</div>
+      <div class="report-rec-score">
+        <div class="report-rec-score-label">Overall Effectiveness</div>
+        <div class="report-rec-score-val">${results[recommended].O_Eff.toFixed(2)}</div>
+      </div>
+    </div>
+
+    ${state.scenario ? `
+    <div class="report-scenario-card">
+      <div class="report-scenario-label">— Decision Scenario —</div>
+      <div class="report-scenario-text">${escapeHtml(state.scenario)}</div>
+    </div>` : ''}
+
+    <section class="report-section">
+      <h3 class="report-section-title" data-num="A.">五種決策過程比較</h3>
+      <div class="report-section-en">Comparison of Five Decision Processes</div>
+      <div class="results-table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>過程 Process</th>
+              <th>D_Qual</th>
+              <th>D_Comm</th>
+              <th>D_TP</th>
+              <th>Cost</th>
+              <th>Devpt</th>
+              <th>D_Eff</th>
+              <th>O_Eff</th>
+              <th>排名</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">— O_Eff 視覺化（金色為推薦過程 · 紅色為負分）—</div>
+        ${chartRows}
+      </div>
+    </section>
+
+    <section class="report-section">
+      <h3 class="report-section-title" data-num="B.">屬性診斷回顧</h3>
+      <div class="report-section-en">Attribute Diagnosis Review (Raw &amp; Rescaled)</div>
+      <div class="attr-review">${attrCells}</div>
+    </section>
+
+    <section class="report-section">
+      <h3 class="report-section-title" data-num="C.">解釋與實施建議</h3>
+      <div class="report-section-en">Interpretation &amp; Implementation Guidelines</div>
+      <div class="explanation">${explanationHtml}</div>
+    </section>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="restart-btn">🔄 重新診斷</button>
+      <button class="btn btn-ghost" id="export-btn">📥 匯出 JSON</button>
+      <button class="btn btn-ghost" id="print-btn">🖨 列印報告</button>
+      <button class="btn btn-text" id="back-edit-btn">← 修改作答</button>
+    </div>
+  `;
+
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    if (confirm('確定要重新開始嗎?')) {
+      state.step = 0; state.answers = {}; state.scenario = ''; state.problemType = null;
+      state.results = null; state.recommended = null;
+      render();
+    }
+  });
+  document.getElementById('export-btn').addEventListener('click', exportJSON);
+  document.getElementById('print-btn').addEventListener('click', () => window.print());
+  document.getElementById('back-edit-btn').addEventListener('click', () => {
+    state.step = 2; render();
+  });
+}
+
+/* ============================================================
+   5. 工具函式
+   ============================================================ */
+
+/** 匯出診斷結果為 JSON 檔 */
+function exportJSON() {
+  const data = {
+    metadata: {
+      system: 'Vroom-Jago Decision-Making Expert System',
+      reference: 'Vroom & Jago (1988); Vroom & Yetton (1973)',
+      timestamp: new Date().toISOString(),
+      problemType: state.problemType
+    },
+    scenario: state.scenario,
+    rawInputs: state.answers,
+    rescaledInputs: state.results.scaled,
+    processResults: state.results.results,
+    recommendation: {
+      process: state.recommended,
+      processNameTw: (state.problemType === 'group' ? PROCESS_DEFS.group : PROCESS_DEFS.individual)[state.recommended].tw,
+      processNameEn: (state.problemType === 'group' ? PROCESS_DEFS.group : PROCESS_DEFS.individual)[state.recommended].en,
+      O_Eff: state.results.results[state.recommended].O_Eff
+    }
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fname = `vroom-jago-${state.problemType}-${state.recommended}-${Date.now()}.json`;
+  a.href = url; a.download = fname; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** HTML 跳脫 */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+  );
+}
+
+/** 載入測試案例 */
+function loadTestCase(c) {
+  const cases = {
+    A: { type: 'group',      scenario: '【測試案例 A】系務會議是否要修訂研究生畢業審查辦法?', a: { QR:5, CR:5, LI:2, ST:2, CP:1, GC:5, CO:2, SI:4, TC:1, GD:1, MT:2, MD:4 } },
+    B: { type: 'group',      scenario: '【測試案例 B】校園突發系統當機,需立即決定備援程序。', a: { QR:1, CR:1, LI:5, ST:5, CP:5, GC:5, CO:1, SI:1, TC:5, GD:5, MT:5, MD:1 } },
+    C: { type: 'individual', scenario: '【測試案例 C】是否將博士論文題目選擇權完全交給該位指導學生?', a: { QR:2, CR:5, LI:1, ST:1, CP:1, GC:5, CO:1, SI:5, TC:1, MT:2, MD:5 } }
+  };
+  const tc = cases[c];
+  state.problemType = tc.type;
+  state.scenario = tc.scenario;
+  state.answers = { ...tc.a };
+  computeAndShow();
+}
+
+/* ============================================================
+   6. Modal 控制
+   ============================================================ */
+
+const modalBackdrop = document.getElementById('modal-backdrop');
+const modal = document.getElementById('modal');
+document.getElementById('fab').addEventListener('click', openModal);
+document.getElementById('modal-close').addEventListener('click', closeModal);
+modalBackdrop.addEventListener('click', e => {
+  if (e.target === modalBackdrop) closeModal();
+});
+
+function openModal() {
+  populateModal();
+  modalBackdrop.classList.add('open');
+}
+function closeModal() {
+  modalBackdrop.classList.remove('open');
+}
+
+function populateModal() {
+  // 12 屬性
+  const paneAttrs = document.getElementById('pane-attrs');
+  paneAttrs.innerHTML = `
+    <p style="margin-bottom:14px;font-size:14px;color:var(--ink-soft);font-style:italic">
+      The 12 Problem Attributes used in the Vroom-Jago normative model.
+    </p>
+    <table class="rescale-table">
+      <thead><tr><th>代碼</th><th>中文</th><th>English</th><th>量表</th></tr></thead>
+      <tbody>${ATTRIBUTES.map(a => `
+        <tr>
+          <td>${a.code}</td>
+          <td style="text-align:left">${a.name}</td>
+          <td style="text-align:left;font-style:italic">${a.nameEn}</td>
+          <td>${
+            a.scale === 'binary' ? 'Yes/No'
+            : a.scale === 'importance' ? 'Importance 1–5'
+            : a.scale === 'sufficiency' ? 'Sufficiency 1–5'
+            : a.scale === 'structure' ? 'Structure 1–5'
+            : a.scale === 'conflict' ? 'Conflict 1–5'
+            : 'Probability 1–5'
+          }</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // 五種決策過程
+  const panProcs = document.getElementById('pane-procs');
+  const proc = (defs, label) => `
+    <div class="eq-section-title">${label}</div>
+    <table class="process-table">
+      <thead><tr><th>代碼</th><th>名稱</th><th>說明</th></tr></thead>
+      <tbody>${Object.entries(defs).map(([k, v]) => `
+        <tr>
+          <td class="proc-code">${k}</td>
+          <td class="proc-name">${v.tw}<br><span style="font-style:italic;color:var(--ink-mute);font-size:12px">${v.en}</span></td>
+          <td>${v.desc}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+  panProcs.innerHTML = proc(PROCESS_DEFS.group, '團體問題 · Group Problem')
+                     + proc(PROCESS_DEFS.individual, '個人問題 · Individual Problem');
+
+  // Rescaling
+  const paneRescale = document.getElementById('pane-rescale');
+  paneRescale.innerHTML = `
+    <p style="margin-bottom:14px;font-size:14px;color:var(--ink-soft);font-style:italic">
+      Rescaling table — converts user inputs (1–5) to model values.
+    </p>
+    <table class="rescale-table">
+      <thead><tr><th>屬性</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead>
+      <tbody>
+        <tr><td>QR · CR · MT · MD<br><span style="font-weight:400;font-style:italic;color:var(--ink-mute);font-size:11px">Importance</span></td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+        <tr><td>LI · ST · CP · GC · SI<br><span style="font-weight:400;font-style:italic;color:var(--ink-mute);font-size:11px">Probability (negative)</span></td><td>−1</td><td>−0.75</td><td>−0.5</td><td>−0.25</td><td>0</td></tr>
+        <tr><td>CO<br><span style="font-weight:400;font-style:italic;color:var(--ink-mute);font-size:11px">Conflict (positive)</span></td><td>0</td><td>0.25</td><td>0.5</td><td>0.75</td><td>1</td></tr>
+        <tr><td>TC · GD<br><span style="font-weight:400;font-style:italic;color:var(--ink-mute);font-size:11px">Binary</span></td><td>0</td><td>—</td><td>—</td><td>—</td><td>1</td></tr>
+      </tbody>
+    </table>
+
+    <div class="eq-section-title">過程係數 · Process Coefficients</div>
+    <table class="rescale-table">
+      <thead><tr><th>團體</th><th>f₁</th><th>f₂</th><th>f₃</th><th>f₄</th></tr></thead>
+      <tbody>
+        ${Object.entries(PROCESSES_GROUP).map(([k, c]) =>
+          `<tr><td>${k}</td><td>${c.f1}</td><td>${c.f2}</td><td>${c.f3}</td><td>${c.f4}</td></tr>`
+        ).join('')}
+      </tbody>
+    </table>
+    <table class="rescale-table">
+      <thead><tr><th>個人</th><th>f₁</th><th>f₂</th><th>f₃</th><th>f₄</th><th>f₅</th><th>f₆</th></tr></thead>
+      <tbody>
+        ${Object.entries(PROCESSES_INDIV).map(([k, c]) =>
+          `<tr><td>${k}</td><td>${c.f1}</td><td>${c.f2}</td><td>${c.f3}</td><td>${c.f4}</td><td>${c.f5}</td><td>${c.f6}</td></tr>`
+        ).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // 方程式
+  const paneEqs = document.getElementById('pane-eqs');
+  paneEqs.innerHTML = `
+    <div class="eq-section-title">團體模型 · Group Model</div>
+    <div class="eq-block">
+      <span class="eq-name">D<span class="eq-sub">Qual</span></span>= QR − (QR/2) × [ <em>f</em>₂·LI + <em>f</em>₄·LI·ST + <em>f</em>₃·GC + (<em>f</em>₁·LI·(1+GC)·CO/2) + (<em>f</em>₃·SI/2) ]
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">D<span class="eq-sub">Comm</span></span>= CR − (CR/2) × [ <em>f</em>₁·CP − ((<em>f</em>₃+<em>f</em>₄+1)·CO·CP/2) ]
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">D<span class="eq-sub">TP</span></span>= (D<span class="eq-sub">Qual</span> + D<span class="eq-sub">Comm</span>) × (1+<em>f</em>₁) × TC
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">Cost</span>= (MT/6) × [ (1+<em>f</em>₁)(1−ST) − ((<em>f</em>₃+<em>f</em>₄−1)·CO/2) ] − 5(<em>f</em>₄−1)·GD
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">Devpt</span>= (MD/24) × QR × [ (1+<em>f</em>₁) − ((<em>f</em>₃+<em>f</em>₄−1)·(GC+0.5)·CO) ]
+    </div>
+    <div class="eq-block" style="background:var(--cream-warm);border-left-color:var(--navy)">
+      <span class="eq-name">O<span class="eq-sub">Eff</span></span>= D<span class="eq-sub">Qual</span> + D<span class="eq-sub">Comm</span> − D<span class="eq-sub">TP</span> − Cost + Devpt
+    </div>
+
+    <div class="eq-section-title">個人模型 · Individual Model</div>
+    <div class="eq-block">
+      <span class="eq-name">D<span class="eq-sub">Qual</span></span>= QR − (QR/2) × [ <em>f</em>₂·LI + <em>f</em>₄·LI·ST + 2<em>f</em>₃·GC + 2<em>f</em>₃·SI + (<em>f</em>₆·LI·(1+GC)·CO/2) + (<em>f</em>₅·GC·(1+CR·CP/4)) ]
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">D<span class="eq-sub">Comm</span></span>= CR − CR × (<em>f</em>₁·CP)
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">D<span class="eq-sub">TP</span></span>= [ (D<span class="eq-sub">Qual</span>+D<span class="eq-sub">Comm</span>)·(1+<em>f</em>₆) + (<em>f</em>₃·QR·(SI+GC)) ] × TC
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">Cost</span>= (MT/6) × [ (1+<em>f</em>₆)(1−ST) − (<em>f</em>₅·CO) ]
+    </div>
+    <div class="eq-block">
+      <span class="eq-name">Devpt</span>= (MD/24) × QR × [ (1+<em>f</em>₁) − 2<em>f</em>₅·(GC+0.5)·CO ]
+    </div>
+    <div class="eq-block" style="background:var(--cream-warm);border-left-color:var(--navy)">
+      <span class="eq-name">O<span class="eq-sub">Eff</span></span>= D<span class="eq-sub">Qual</span> + D<span class="eq-sub">Comm</span> − D<span class="eq-sub">TP</span> − Cost + Devpt
+    </div>
+  `;
+}
+
+// Modal tabs
+document.querySelectorAll('.modal-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.modal-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.modal-pane').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('pane-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// ESC 關閉 modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ============================================================
+   7. 啟動
+   ============================================================ */
+render();
+
+</script>
+</body>
+</html>
