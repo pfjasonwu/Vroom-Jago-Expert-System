@@ -1,2 +1,1 @@
-# Vroom-Jago-Expert-System
-Vroom-Jago Expert System
+# Vroom-Yetton-Jago Decision Model Expert System
