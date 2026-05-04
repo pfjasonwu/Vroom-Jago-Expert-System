@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ============================================================================
-  Vroom-Jago 決策模式專家系統 (Vroom-Jago Decision-Making Expert System)
+  Vroom-Yetton-Jago 決策模式專家系統 (Vroom-Yetton-Jago Decision-Making Expert System)
 ============================================================================
   模型來源:
     Vroom, V. H., & Jago, A. G. (1988). The new leadership: Managing
@@ -20,7 +20,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vroom-Jago 決策模式專家系統</title>
+<title>Vroom-Yetton-Jago 決策模式專家系統</title>
 <style>
 /* ============================================================
    設計系統 — 學術期刊風格
@@ -1171,7 +1171,7 @@ details.disclosure .disclosure-body {
   <div class="app-header-inner">
     <div class="header-brand">
       <div>
-        <div class="header-title">Vroom-Jago 規範型決策模式專家系統</div>
+        <div class="header-title">Vroom-Yetton-Jago 規範型決策模式專家系統</div>
         <div class="header-sub">Normative Decision-Making Model · 1973 / 1988</div>
       </div>
     </div>
@@ -1189,7 +1189,7 @@ details.disclosure .disclosure-body {
   <div class="modal" id="modal" role="dialog" aria-modal="true">
     <div class="modal-header">
       <div>
-        <div class="modal-title">Vroom-Jago 模型參考</div>
+        <div class="modal-title">Vroom-Yetton-Jago 模型參考</div>
         <div class="modal-subtitle">Reference · Definitions, Equations &amp; Rescaling</div>
       </div>
       <button class="modal-close" id="modal-close" aria-label="關閉">×</button>
@@ -1655,14 +1655,14 @@ function renderWelcome() {
   app.innerHTML = `
     <div class="welcome">
       <div class="welcome-eyebrow">Normative Decision Model · Expert System</div>
-      <h1 class="welcome-title">Vroom-Jago規範性決策模式專家系統</h1>
+      <h1 class="welcome-title">Vroom-Yetton-Jago 規範性決策模式專家系統</h1>
       <div class="welcome-title-en">A Normative Model of Participation in Decision Making</div>
       <div class="welcome-cite">
         Based on <strong>Vroom &amp; Yetton (1973)</strong> · <em>Leadership and Decision-Making</em><br>
         Extended by <strong>Vroom &amp; Jago (1988)</strong> · <em>The New Leadership</em>
       </div>
       <p class="welcome-intro">
-        本系統依循 Vroom-Jago 規範模型,透過診斷 <strong>12 項問題屬性（個人問題為11項）</strong>,
+        本系統依循 Vroom-Yetton-Jago 規範模型,透過診斷 <strong>12 項問題屬性（個人問題為11項）</strong>,
         以模型方程式計算五種決策過程的 <strong>整體效能（Overall Effectiveness）</strong>,
         並推薦在當前情境下最適合您的決策方式。系統適用於組織理論教學、領導力培訓、
         以及實務管理者於關鍵決策前的自我診斷。
@@ -2121,7 +2121,7 @@ function renderResult() {
 function exportJSON() {
   const data = {
     metadata: {
-      system: 'Vroom-Jago Decision-Making Expert System',
+      system: 'Vroom-Yetton-Jago Decision-Making Expert System',
       reference: 'Vroom & Jago (1988); Vroom & Yetton (1973)',
       timestamp: new Date().toISOString(),
       problemType: state.problemType
@@ -2140,7 +2140,7 @@ function exportJSON() {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const fname = `vroom-jago-${state.problemType}-${state.recommended}-${Date.now()}.json`;
+  const fname = `Vroom-Yetton-Jago-${state.problemType}-${state.recommended}-${Date.now()}.json`;
   a.href = url; a.download = fname; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -2191,7 +2191,7 @@ function populateModal() {
   const paneAttrs = document.getElementById('pane-attrs');
   paneAttrs.innerHTML = `
     <p style="margin-bottom:14px;font-size:14px;color:var(--ink-soft);font-style:italic">
-      The 12 Problem Attributes used in the Vroom-Jago normative model.
+      The 12 Problem Attributes used in the Vroom-Yetton-Jago normative model.
     </p>
     <table class="rescale-table">
       <thead><tr><th>代碼</th><th>中文</th><th>English</th><th>量表</th></tr></thead>
