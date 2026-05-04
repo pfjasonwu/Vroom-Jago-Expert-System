@@ -1822,8 +1822,8 @@ function renderQuestions() {
     let scaleHtml = '';
     if (isBinary) {
       // TC / GD 二元
-      const yesLabel = q.code === 'TC' ? '時間極度緊迫' : '部屬地理分散';
-      const noLabel  = q.code === 'TC' ? '時間充裕' : '部屬同處一地';
+      const yesLabel = q.code === 'TC' ? '時間極度緊迫' : '召集成本高到無法承擔';
+      const noLabel  = q.code === 'TC' ? '時間尚未極度緊迫' : '召集成本可以承擔';
       scaleHtml = `
         <div class="binary-row">
           <button class="binary-btn ${ans === 1 ? 'selected' : ''}" data-code="${q.code}" data-val="1">
